@@ -1,0 +1,10 @@
+usage: ollama-aid import [-h] [--json] [-q] -n NAME file
+
+positional arguments:
+  file                  Path to GGUF file
+
+options:
+  -h, --help            show this help message and exit
+  --json                Output as JSON
+  -q, --quiet           Suppress non-essential output
+  -n NAME, --name NAME  New model name

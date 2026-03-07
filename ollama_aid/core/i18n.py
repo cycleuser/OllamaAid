@@ -1,0 +1,241 @@
+"""
+OllamaAid - Internationalization support
+Bilingual (English / Chinese) text management.
+"""
+
+from typing import Dict
+
+
+class I18n:
+    """Manages bilingual text for the application."""
+
+    def __init__(self, language: str = "en"):
+        self._lang = language
+        self._translations: Dict[str, Dict[str, str]] = {
+            "en": {
+                # General
+                "app_title": "OllamaAid - Unified Ollama Toolkit",
+                "language": "Language",
+                "error": "Error",
+                "success": "Success",
+                "warning": "Warning",
+                "confirm": "Confirm",
+                "cancel": "Cancel",
+                "close": "Close",
+                "refresh": "Refresh",
+                "loading": "Loading...",
+                "unknown": "Unknown",
+                "none": "None",
+                # Tabs
+                "tab_manager": "Model Manager",
+                "tab_trends": "Trends",
+                "tab_tester": "Tester",
+                "tab_runner": "External Runner",
+                # Model Manager
+                "model_name": "Model Name",
+                "model_tag": "Tag",
+                "model_id": "ID",
+                "model_size": "Size",
+                "model_modified": "Modified",
+                "btn_refresh": "Refresh",
+                "btn_export": "Export",
+                "btn_import": "Import",
+                "btn_delete": "Delete",
+                "btn_update": "Update",
+                "search_placeholder": "Search models...",
+                "sort_name_asc": "Name A-Z",
+                "sort_name_desc": "Name Z-A",
+                "sort_size_asc": "Size (small first)",
+                "sort_size_desc": "Size (large first)",
+                "sort_date_asc": "Date (oldest first)",
+                "sort_date_desc": "Date (newest first)",
+                "export_success": "Model exported successfully: {}",
+                "import_success": "Model imported successfully: {}",
+                "delete_success": "Model deleted: {}",
+                "update_success": "Model updated: {}",
+                "delete_confirm": "Are you sure you want to delete model '{}'?",
+                "no_model_selected": "No model selected",
+                "ollama_not_found": "Ollama not found. Please install Ollama first.",
+                "models_loaded": "Loaded {} models",
+                "operation_failed": "Operation failed: {}",
+                # Trends
+                "trends_title": "Ollama Model Trends",
+                "refresh_data": "Refresh Data",
+                "click_refresh": "Click refresh to start",
+                "pulls": "Pulls",
+                "min_params": "Min Params(B)",
+                "max_params": "Max Params(B)",
+                "param_details": "Parameter Details",
+                "function_tags": "Function Tags",
+                "update_time": "Update Time",
+                "access_link": "Access Link",
+                "network_error": "Cannot retrieve model data, please check your network connection",
+                "scraping_error": "Error scraping data: {}",
+                "loaded_trends": "Loaded {} models from ollama.com",
+                # Tester
+                "tester_title": "Model Performance Tester",
+                "select_models": "Select Models",
+                "select_scenarios": "Select Scenarios",
+                "btn_start_test": "Start Test",
+                "btn_stop_test": "Stop Test",
+                "btn_export_csv": "Export CSV",
+                "tab_results": "Results",
+                "tab_charts": "Charts",
+                "tab_logs": "Logs",
+                "test_progress": "Testing {} on scenario '{}'...",
+                "test_complete": "All tests completed ({} results)",
+                "test_stopped": "Testing stopped",
+                "col_model": "Model",
+                "col_scenario": "Scenario",
+                "col_score": "Score",
+                "col_eval_rate": "Eval Rate (t/s)",
+                "col_total_dur": "Total Duration (s)",
+                "col_load_dur": "Load Duration (s)",
+                "col_prompt_tokens": "Prompt Tokens",
+                "col_comp_tokens": "Completion Tokens",
+                "col_ttft": "TTFT (ms)",
+                # Runner
+                "runner_title": "External Runner (vLLM / llama.cpp)",
+                "runner_backend": "Backend",
+                "runner_model": "Model",
+                "runner_host": "Host",
+                "runner_port": "Port",
+                "runner_gpu_layers": "GPU Layers (-1 = all)",
+                "runner_ctx_size": "Context Size",
+                "runner_threads": "Threads (0 = auto)",
+                "runner_batch_size": "Batch Size",
+                "runner_tp_size": "Tensor Parallel Size",
+                "runner_dtype": "Data Type",
+                "runner_max_model_len": "Max Model Length",
+                "runner_extra_args": "Extra Arguments",
+                "btn_start_server": "Start Server",
+                "btn_stop_server": "Stop Server",
+                "server_running": "Server running on {}:{}",
+                "server_stopped": "Server stopped",
+                "server_failed": "Failed to start server: {}",
+                "model_path_resolved": "Model path: {}",
+                "no_backend_found": "Backend '{}' not found. Please install it.",
+            },
+            "zh": {
+                # General
+                "app_title": "OllamaAid - Ollama统一工具箱",
+                "language": "语言",
+                "error": "错误",
+                "success": "成功",
+                "warning": "警告",
+                "confirm": "确认",
+                "cancel": "取消",
+                "close": "关闭",
+                "refresh": "刷新",
+                "loading": "加载中...",
+                "unknown": "未知",
+                "none": "无",
+                # Tabs
+                "tab_manager": "模型管理",
+                "tab_trends": "趋势",
+                "tab_tester": "测试",
+                "tab_runner": "外部运行器",
+                # Model Manager
+                "model_name": "模型名称",
+                "model_tag": "标签",
+                "model_id": "ID",
+                "model_size": "大小",
+                "model_modified": "修改时间",
+                "btn_refresh": "刷新",
+                "btn_export": "导出",
+                "btn_import": "导入",
+                "btn_delete": "删除",
+                "btn_update": "更新",
+                "search_placeholder": "搜索模型...",
+                "sort_name_asc": "名称 A-Z",
+                "sort_name_desc": "名称 Z-A",
+                "sort_size_asc": "大小（从小到大）",
+                "sort_size_desc": "大小（从大到小）",
+                "sort_date_asc": "日期（从旧到新）",
+                "sort_date_desc": "日期（从新到旧）",
+                "export_success": "模型导出成功：{}",
+                "import_success": "模型导入成功：{}",
+                "delete_success": "模型已删除：{}",
+                "update_success": "模型已更新：{}",
+                "delete_confirm": "确定要删除模型 '{}' 吗？",
+                "no_model_selected": "未选择模型",
+                "ollama_not_found": "未找到Ollama，请先安装Ollama。",
+                "models_loaded": "已加载 {} 个模型",
+                "operation_failed": "操作失败：{}",
+                # Trends
+                "trends_title": "Ollama模型趋势",
+                "refresh_data": "刷新数据",
+                "click_refresh": "点击刷新开始",
+                "pulls": "下载量(Pulls)",
+                "min_params": "最小参数(B)",
+                "max_params": "最大参数(B)",
+                "param_details": "参数详情",
+                "function_tags": "功能标签",
+                "update_time": "更新时间",
+                "access_link": "访问链接",
+                "network_error": "无法获取模型数据，请检查网络连接",
+                "scraping_error": "爬取数据时出错：{}",
+                "loaded_trends": "已从ollama.com加载 {} 个模型",
+                # Tester
+                "tester_title": "模型性能测试",
+                "select_models": "选择模型",
+                "select_scenarios": "选择测试场景",
+                "btn_start_test": "开始测试",
+                "btn_stop_test": "停止测试",
+                "btn_export_csv": "导出CSV",
+                "tab_results": "结果",
+                "tab_charts": "图表",
+                "tab_logs": "日志",
+                "test_progress": "正在测试 {} 的场景 '{}'...",
+                "test_complete": "所有测试已完成（{} 个结果）",
+                "test_stopped": "测试已停止",
+                "col_model": "模型",
+                "col_scenario": "场景",
+                "col_score": "评分",
+                "col_eval_rate": "生成速率 (t/s)",
+                "col_total_dur": "总耗时 (s)",
+                "col_load_dur": "加载耗时 (s)",
+                "col_prompt_tokens": "提示词令牌数",
+                "col_comp_tokens": "生成令牌数",
+                "col_ttft": "首令牌延迟 (ms)",
+                # Runner
+                "runner_title": "外部运行器（vLLM / llama.cpp）",
+                "runner_backend": "后端",
+                "runner_model": "模型",
+                "runner_host": "主机",
+                "runner_port": "端口",
+                "runner_gpu_layers": "GPU层数（-1=全部）",
+                "runner_ctx_size": "上下文大小",
+                "runner_threads": "线程数（0=自动）",
+                "runner_batch_size": "批处理大小",
+                "runner_tp_size": "张量并行大小",
+                "runner_dtype": "数据类型",
+                "runner_max_model_len": "最大模型长度",
+                "runner_extra_args": "额外参数",
+                "btn_start_server": "启动服务",
+                "btn_stop_server": "停止服务",
+                "server_running": "服务运行在 {}:{}",
+                "server_stopped": "服务已停止",
+                "server_failed": "启动服务失败：{}",
+                "model_path_resolved": "模型路径：{}",
+                "no_backend_found": "未找到后端 '{}'，请先安装。",
+            },
+        }
+
+    @property
+    def language(self) -> str:
+        return self._lang
+
+    def set_language(self, lang: str) -> None:
+        if lang in self._translations:
+            self._lang = lang
+
+    def t(self, key: str, *args) -> str:
+        """Get translated text. Positional args are passed to ``str.format``."""
+        text = self._translations.get(self._lang, {}).get(key, key)
+        if args:
+            try:
+                return text.format(*args)
+            except (IndexError, KeyError):
+                return text
+        return text

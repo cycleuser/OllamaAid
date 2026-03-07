@@ -1,0 +1,6 @@
+usage: ollama-aid trends [-h] [--json] [-q]
+
+options:
+  -h, --help   show this help message and exit
+  --json       Output as JSON
+  -q, --quiet  Suppress non-essential output

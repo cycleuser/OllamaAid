@@ -1,0 +1,36 @@
+usage: ollama-aid [-h] [--json] [-q] [-V] [--gui] [--web] [--host HOST] [--port PORT]
+                  {list,export,import,delete,update,info,trends,test,run,resolve} ...
+
+OllamaAid - Unified Ollama model management, trends & testing tool
+
+options:
+  -h, --help            show this help message and exit
+  --json                Output as JSON
+  -q, --quiet           Suppress non-essential output
+  -V, --version         show program's version number and exit
+  --gui                 Launch PySide6 GUI
+  --web                 Launch Flask web dashboard
+  --host HOST           Host for --web (default: 0.0.0.0)
+  --port PORT           Port for --web (default: 5000)
+
+commands:
+  {list,export,import,delete,update,info,trends,test,run,resolve}
+    list                List local Ollama models
+    export              Export a model to GGUF + Modelfile
+    import              Import a GGUF file as Ollama model
+    delete              Delete an Ollama model
+    update              Pull latest version of a model
+    info                Show detailed model information
+    trends              Fetch model trends from ollama.com
+    test                Run benchmark tests on models
+    run                 Run model via vLLM or llama.cpp
+    resolve             Resolve Ollama model to disk path
+
+examples:
+  ollama-aid list                     List local models
+  ollama-aid trends                   Fetch model trends
+  ollama-aid test m1,m2 -o out.csv    Benchmark models
+  ollama-aid run qwen3:0.6b           Run via llama.cpp
+  ollama-aid --gui                    Launch PySide6 GUI
+  ollama-aid --web                    Launch Flask web dashboard
+  ollama-aid --web --port 8000        Web on custom port

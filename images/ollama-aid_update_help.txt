@@ -1,0 +1,9 @@
+usage: ollama-aid update [-h] [--json] [-q] model
+
+positional arguments:
+  model        Model name
+
+options:
+  -h, --help   show this help message and exit
+  --json       Output as JSON
+  -q, --quiet  Suppress non-essential output

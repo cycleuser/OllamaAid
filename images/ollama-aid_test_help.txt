@@ -1,0 +1,11 @@
+usage: ollama-aid test [-h] [--json] [-q] [-o OUTPUT] models
+
+positional arguments:
+  models                Comma-separated model names
+
+options:
+  -h, --help            show this help message and exit
+  --json                Output as JSON
+  -q, --quiet           Suppress non-essential output
+  -o OUTPUT, --output OUTPUT
+                        Export results to CSV file

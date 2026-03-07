@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OllamaAid</title>
+<style>
+:root{--bg:#1a1a2e;--surface:#16213e;--card:#0f3460;--accent:#e94560;--text:#eee;--muted:#888;--border:#333;--green:#4caf50;--blue:#2196f3}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--surface);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+header h1{font-size:1.4em;font-weight:600}
+header span{color:var(--muted);font-size:.85em}
+.tabs{display:flex;background:var(--surface);border-bottom:2px solid var(--border)}
+.tab{padding:10px 24px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:.95em;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom:2px solid var(--accent)}
+.panel{display:none;padding:20px}
+.panel.active{display:block}
+.controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+button{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-size:.9em;transition:background .2s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#c73550}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--surface)}
+.btn-success{background:var(--green);color:#fff}
+.btn-info{background:var(--blue);color:#fff}
+input,select{padding:8px 12px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);font-size:.9em}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--card);font-weight:600;cursor:pointer}
+th:hover{background:var(--surface)}
+tr:hover{background:rgba(233,69,96,.08)}
+.status{padding:10px;margin-top:10px;color:var(--muted);font-size:.85em}
+.card{background:var(--card);border-radius:8px;padding:16px;margin-bottom:12px}
+.form-row{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.form-row label{width:140px;font-size:.9em;color:var(--muted)}
+.form-row input,.form-row select{flex:1}
+.log-box{background:#111;border-radius:4px;padding:12px;font-family:monospace;font-size:.85em;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+.lang-select{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>OllamaAid</h1>
+  <div>
+    <select class="lang-select" onchange="setLang(this.value)">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+    </select>
+    <span>v{{ version }}</span>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active" data-tab="manager">Model Manager</div>
+  <div class="tab" data-tab="trends">Trends</div>
+  <div class="tab" data-tab="tester">Tester</div>
+  <div class="tab" data-tab="runner">External Runner</div>
+</div>
+
+<!-- Model Manager -->
+<div id="manager" class="panel active">
+  <div class="controls">
+    <button class="btn-primary" onclick="loadModels()">Refresh</button>
+    <input id="search" placeholder="Search models..." oninput="filterModels()">
+    <button class="btn-secondary" onclick="deleteSelected()">Delete</button>
+    <button class="btn-info" onclick="updateSelected()">Update</button>
+  </div>
+  <table>
+    <thead><tr><th>Name</th><th>Tag</th><th>ID</th><th>Size</th><th>Modified</th></tr></thead>
+    <tbody id="model-tbody"></tbody>
+  </table>
+  <div class="status" id="manager-status">Click Refresh to load models.</div>
+</div>
+
+<!-- Trends -->
+<div id="trends" class="panel">
+  <div class="controls">
+    <button class="btn-primary" onclick="loadTrends()">Refresh Trends</button>
+  </div>
+  <table>
+    <thead><tr><th>Model</th><th>Pulls</th><th>Min Params</th><th>Max Params</th><th>Params</th><th>Tags</th><th>Updated</th><th>URL</th></tr></thead>
+    <tbody id="trends-tbody"></tbody>
+  </table>
+  <div class="status" id="trends-status">Click Refresh to fetch trends.</div>
+</div>
+
+<!-- Tester -->
+<div id="tester" class="panel">
+  <div class="controls">
+    <input id="test-models" placeholder="Models (comma separated, e.g. llama3.2:3b,qwen2:7b)" style="flex:1">
+    <button class="btn-success" onclick="runTest()">Start Test</button>
+  </div>
+  <table>
+    <thead><tr><th>Model</th><th>Scenario</th><th>Score</th><th>Eval Rate (t/s)</th><th>Duration (s)</th></tr></thead>
+    <tbody id="test-tbody"></tbody>
+  </table>
+  <div class="status" id="test-status"></div>
+</div>
+
+<!-- Runner -->
+<div id="runner" class="panel">
+  <div class="card">
+    <div class="form-row"><label>Backend</label><select id="r-backend"><option value="llama.cpp">llama.cpp</option><option value="vllm">vLLM</option></select></div>
+    <div class="form-row"><label>Model Name</label><input id="r-model" placeholder="e.g. llama3.2:3b"></div>
+    <div class="form-row"><label>Host</label><input id="r-host" value="127.0.0.1"></div>
+    <div class="form-row"><label>Port</label><input id="r-port" type="number" value="8080"></div>
+    <div class="form-row"><label>GPU Layers</label><input id="r-gpu" type="number" value="-1"></div>
+    <div class="form-row"><label>Context Size</label><input id="r-ctx" type="number" value="4096"></div>
+    <div class="form-row"><label>Threads</label><input id="r-threads" type="number" value="0"></div>
+    <div class="form-row"><label>Batch Size</label><input id="r-batch" type="number" value="512"></div>
+    <div class="form-row"><label>TP Size</label><input id="r-tp" type="number" value="1"></div>
+    <div class="form-row"><label>Dtype</label><select id="r-dtype"><option>auto</option><option>float16</option><option>bfloat16</option><option>float32</option></select></div>
+    <div class="form-row"><label>Max Model Len</label><input id="r-maxlen" type="number" value="0"></div>
+  </div>
+  <div class="controls">
+    <button class="btn-success" onclick="startRunner()">Start Server</button>
+    <button class="btn-primary" onclick="stopRunner()">Stop Server</button>
+    <button class="btn-secondary" onclick="checkRunner()">Check Status</button>
+  </div>
+  <div class="status" id="runner-status"></div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+  };
+});
+
+let allModels=[];
+
+async function api(url,opt){
+  const r=await fetch(url,opt);
+  return r.json();
+}
+
+function setLang(v){api('/api/language',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:v})})}
+
+// Models
+async function loadModels(){
+  document.getElementById('manager-status').innerHTML='<span class="spinner"></span>Loading...';
+  const d=await api('/api/models');
+  allModels=d.models||[];
+  renderModels(allModels);
+  document.getElementById('manager-status').textContent=`Loaded ${allModels.length} models`;
+}
+function renderModels(list){
+  document.getElementById('model-tbody').innerHTML=list.map(m=>
+    `<tr onclick="this.classList.toggle('selected')" data-name="${m.full_name}" style="cursor:pointer"><td>${m.name}</td><td>${m.tag}</td><td>${m.id}</td><td>${m.size}</td><td>${m.modified}</td></tr>`
+  ).join('');
+}
+function filterModels(){
+  const q=document.getElementById('search').value.toLowerCase();
+  renderModels(allModels.filter(m=>(m.name+m.tag).toLowerCase().includes(q)));
+}
+async function deleteSelected(){
+  const sel=document.querySelector('#model-tbody tr.selected');
+  if(!sel)return alert('Select a model first');
+  if(!confirm(`Delete ${sel.dataset.name}?`))return;
+  const d=await api(`/api/models/${sel.dataset.name}/delete`,{method:'POST'});
+  document.getElementById('manager-status').textContent=d.success?'Deleted':'Error: '+d.error;
+  if(d.success)loadModels();
+}
+async function updateSelected(){
+  const sel=document.querySelector('#model-tbody tr.selected');
+  if(!sel)return alert('Select a model first');
+  document.getElementById('manager-status').innerHTML='<span class="spinner"></span>Updating...';
+  const d=await api(`/api/models/${sel.dataset.name}/update`,{method:'POST'});
+  document.getElementById('manager-status').textContent=d.success?'Updated':'Error: '+d.error;
+}
+
+// Trends
+async function loadTrends(){
+  document.getElementById('trends-status').innerHTML='<span class="spinner"></span>Fetching trends...';
+  const d=await api('/api/trends');
+  if(!d.success){document.getElementById('trends-status').textContent='Error: '+d.error;return;}
+  const fmt=n=>n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':Math.round(n);
+  document.getElementById('trends-tbody').innerHTML=(d.models||[]).map(m=>
+    `<tr><td>${m.name}</td><td>${fmt(m.pulls)}</td><td>${m.min_params?m.min_params.toFixed(1)+'B':'-'}</td><td>${m.max_params?m.max_params.toFixed(1)+'B':'-'}</td><td>${m.param_details||'-'}</td><td>${(m.tags||[]).join(', ')||'-'}</td><td>${m.updated||'-'}</td><td><a href="${m.url}" target="_blank" style="color:var(--blue)">${m.url}</a></td></tr>`
+  ).join('');
+  document.getElementById('trends-status').textContent=`Loaded ${(d.models||[]).length} models`;
+}
+
+// Tester
+async function runTest(){
+  const models=document.getElementById('test-models').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!models.length)return alert('Enter model names');
+  document.getElementById('test-status').innerHTML='<span class="spinner"></span>Running tests...';
+  const d=await api('/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({models})});
+  if(!d.success){document.getElementById('test-status').textContent='Error: '+d.error;return;}
+  document.getElementById('test-tbody').innerHTML=(d.results||[]).map(r=>
+    `<tr><td>${r.model}</td><td>${r.scenario}</td><td>${(r.self_score||0).toFixed(1)}</td><td>${(r.eval_rate_tps||0).toFixed(1)}</td><td>${(r.total_duration_sec||0).toFixed(2)}</td></tr>`
+  ).join('');
+  document.getElementById('test-status').textContent=`Completed ${(d.results||[]).length} tests`;
+}
+
+// Runner
+async function startRunner(){
+  const body={
+    model_name:document.getElementById('r-model').value,
+    backend:document.getElementById('r-backend').value,
+    host:document.getElementById('r-host').value,
+    port:+document.getElementById('r-port').value,
+    gpu_layers:+document.getElementById('r-gpu').value,
+    context_size:+document.getElementById('r-ctx').value,
+    threads:+document.getElementById('r-threads').value,
+    batch_size:+document.getElementById('r-batch').value,
+    tensor_parallel_size:+document.getElementById('r-tp').value,
+    dtype:document.getElementById('r-dtype').value,
+    max_model_len:+document.getElementById('r-maxlen').value,
+  };
+  document.getElementById('runner-status').innerHTML='<span class="spinner"></span>Starting server...';
+  const d=await api('/api/runner/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  document.getElementById('runner-status').textContent=d.success?`Server running (PID ${d.data?.pid})`:'Error: '+d.error;
+}
+async function stopRunner(){
+  const d=await api('/api/runner/stop',{method:'POST'});
+  document.getElementById('runner-status').textContent=d.success?'Server stopped':'Error: '+d.error;
+}
+async function checkRunner(){
+  const d=await api('/api/runner/status');
+  document.getElementById('runner-status').textContent=d.data?.running?`Running (PID ${d.data.pid})`:'Not running';
+}
+</script>
+</body>
+</html>

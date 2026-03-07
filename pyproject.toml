@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ollama-aid"
+dynamic = ["version"]
+description = "Unified Ollama model management, trends viewing, testing & external runner tool"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.10"
+authors = [
+    {name = "cycleuser"},
+]
+keywords = ["ollama", "llm", "model", "management", "trends", "testing", "vllm", "llama-cpp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "requests>=2.28.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+gui = [
+    "PySide6>=6.5.0",
+]
+web = [
+    "flask>=3.0.0",
+]
+test = [
+    "pytest>=7.0",
+]
+tester = [
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "numpy>=1.24.0",
+]
+all = [
+    "PySide6>=6.5.0",
+    "flask>=3.0.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "numpy>=1.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/cycleuser/OllamaAid"
+Repository = "https://github.com/cycleuser/OllamaAid"
+Issues = "https://github.com/cycleuser/OllamaAid/issues"
+
+[project.scripts]
+ollama-aid = "ollama_aid.cli.main:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "ollama_aid.__version__.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["ollama_aid*"]
+
+[tool.setuptools.package-data]
+"ollama_aid.web" = ["templates/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

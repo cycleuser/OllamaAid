@@ -1,0 +1,26 @@
+usage: ollama-aid run [-h] [--json] [-q] [-b {vllm,llama.cpp}] [--host HOST] [--port PORT]
+                      [--gpu-layers GPU_LAYERS] [--ctx-size CTX_SIZE] [--threads THREADS]
+                      [--batch-size BATCH_SIZE] [--tp-size TP_SIZE] [--dtype DTYPE]
+                      [--max-model-len MAX_MODEL_LEN] [--extra-args EXTRA_ARGS] [--stop]
+                      [model]
+
+positional arguments:
+  model                 Model name
+
+options:
+  -h, --help            show this help message and exit
+  --json                Output as JSON
+  -q, --quiet           Suppress non-essential output
+  -b {vllm,llama.cpp}, --backend {vllm,llama.cpp}
+  --host HOST
+  --port PORT
+  --gpu-layers GPU_LAYERS
+  --ctx-size CTX_SIZE
+  --threads THREADS
+  --batch-size BATCH_SIZE
+  --tp-size TP_SIZE
+  --dtype DTYPE
+  --max-model-len MAX_MODEL_LEN
+  --extra-args EXTRA_ARGS
+                        Extra args as space-separated string
+  --stop                Stop running server
