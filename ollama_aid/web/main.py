@@ -51,7 +51,8 @@ def api_list_models():
     models = [
         {
             "name": m.name, "tag": m.tag, "full_name": m.full_name,
-            "id": m.model_id, "size": m.size, "modified": m.modified_date,
+            "id": m.model_id, "size": m.size, "size_bytes": m.size_bytes,
+            "modified": m.modified_date,
         }
         for m in (result.data or [])
     ]
@@ -93,6 +94,19 @@ def api_trends():
         return jsonify({"success": False, "error": result.error}), 500
     data = [t.to_dict() for t in (result.data or [])]
     return jsonify({"success": True, "models": data})
+
+
+@app.route("/api/trends/download", methods=["POST"])
+def api_trends_download():
+    body = request.get_json(force=True) if request.is_json else {}
+    model_name = body.get("model_name", "").strip()
+    tag = body.get("tag", "").strip()
+    if not model_name or not tag:
+        return jsonify({"success": False, "error": "model_name and tag are required"}), 400
+    full_name = f"{model_name}:{tag}"
+    from ollama_aid.core.manager import OllamaManager
+    result = OllamaManager().update_model(full_name)
+    return jsonify(result.to_dict())
 
 
 @app.route("/api/test", methods=["POST"])

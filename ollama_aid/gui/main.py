@@ -24,7 +24,7 @@ from ollama_aid.__version__ import __version__, __app_name_cn__
 from ollama_aid.core.i18n import I18n
 from ollama_aid.core.models import (
     DEFAULT_TEST_SCENARIOS, ModelInfo, RunnerBackend,
-    RunnerConfig, TestResult, TrendData,
+    RunnerConfig, TestResult, TrendData, parse_param_tags,
 )
 
 
@@ -191,10 +191,18 @@ class ManagerTab(QWidget):
 
     def _selected_model(self) -> Optional[ModelInfo]:
         row = self.table.currentRow()
-        if row < 0 or row >= len(self._models):
+        if row < 0:
             QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_model_selected"))
             return None
-        return self._models[row]
+        item = self.table.item(row, 0)
+        if item is None:
+            QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_model_selected"))
+            return None
+        idx = item.data(Qt.UserRole)
+        if idx is None or idx < 0 or idx >= len(self._models):
+            QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_model_selected"))
+            return None
+        return self._models[idx]
 
     def load_models(self):
         self.btn_refresh.setEnabled(False)
@@ -214,13 +222,17 @@ class ManagerTab(QWidget):
         self.status.setText(self.i18n.t("models_loaded", len(self._models)))
 
     def _populate(self):
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(len(self._models))
         for row, m in enumerate(self._models):
-            self.table.setItem(row, 0, QTableWidgetItem(m.name))
+            name_item = QTableWidgetItem(m.name)
+            name_item.setData(Qt.UserRole, row)
+            self.table.setItem(row, 0, name_item)
             self.table.setItem(row, 1, QTableWidgetItem(m.tag))
             self.table.setItem(row, 2, QTableWidgetItem(m.model_id))
-            self.table.setItem(row, 3, QTableWidgetItem(m.size))
+            self.table.setItem(row, 3, NumericItem(m.size, m.size_bytes))
             self.table.setItem(row, 4, QTableWidgetItem(m.modified_date))
+        self.table.setSortingEnabled(True)
 
     def _filter(self, text: str):
         text = text.lower()
@@ -338,6 +350,9 @@ class TrendsTab(QWidget):
         self.btn_refresh = QPushButton(self.i18n.t("refresh_data"))
         self.btn_refresh.clicked.connect(self.refresh)
         ctrl.addWidget(self.btn_refresh)
+        self.btn_download = QPushButton(self.i18n.t("btn_download"))
+        self.btn_download.clicked.connect(self._download)
+        ctrl.addWidget(self.btn_download)
         self.status = QLabel(self.i18n.t("click_refresh"))
         ctrl.addWidget(self.status)
         ctrl.addStretch()
@@ -399,9 +414,12 @@ class TrendsTab(QWidget):
         self.btn_refresh.setEnabled(True)
         self.progress.setVisible(False)
         self._data = data
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(len(data))
         for row, t in enumerate(data):
-            self.table.setItem(row, 0, QTableWidgetItem(t.name))
+            name_item = QTableWidgetItem(t.name)
+            name_item.setData(Qt.UserRole, row)
+            self.table.setItem(row, 0, name_item)
             self.table.setItem(row, 1, NumericItem(self._fmt_num(t.pulls), t.pulls))
             self.table.setItem(row, 2, NumericItem(self._fmt_params(t.min_params), t.min_params))
             self.table.setItem(row, 3, NumericItem(self._fmt_params(t.max_params), t.max_params))
@@ -409,7 +427,69 @@ class TrendsTab(QWidget):
             self.table.setItem(row, 5, QTableWidgetItem(", ".join(t.tags) if t.tags else self.i18n.t("none")))
             self.table.setItem(row, 6, TimeItem(t.updated or self.i18n.t("unknown")))
             self.table.setItem(row, 7, QTableWidgetItem(t.url))
+        self.table.setSortingEnabled(True)
         self.status.setText(self.i18n.t("loaded_trends", len(data)))
+
+    def _selected_trend(self) -> Optional[TrendData]:
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_trend_selected"))
+            return None
+        item = self.table.item(row, 0)
+        if item is None:
+            QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_trend_selected"))
+            return None
+        idx = item.data(Qt.UserRole)
+        if idx is None or idx < 0 or idx >= len(self._data):
+            QMessageBox.warning(self, self.i18n.t("warning"), self.i18n.t("no_trend_selected"))
+            return None
+        return self._data[idx]
+
+    def _download(self):
+        trend = self._selected_trend()
+        if not trend:
+            return
+        tags = parse_param_tags(trend.param_details)
+        if tags:
+            choices = tags + ["latest"]
+            tag, ok = QInputDialog.getItem(
+                self, self.i18n.t("select_size"),
+                self.i18n.t("select_size_prompt"),
+                choices, 0, False,
+            )
+        else:
+            tag, ok = QInputDialog.getText(
+                self, self.i18n.t("select_size"),
+                self.i18n.t("enter_tag"),
+            )
+            if ok and not tag.strip():
+                tag = "latest"
+        if not ok:
+            return
+        tag = tag.strip().lower()
+        full_name = f"{trend.name}:{tag}"
+        reply = QMessageBox.question(
+            self, self.i18n.t("confirm"),
+            self.i18n.t("download_confirm", full_name),
+        )
+        if reply != QMessageBox.Yes:
+            return
+        self.btn_download.setEnabled(False)
+        self.status.setText(self.i18n.t("downloading", full_name))
+        from ollama_aid.core.manager import OllamaManager
+        self._dl_worker = WorkerThread(OllamaManager().update_model, full_name)
+        self._dl_worker.finished.connect(
+            lambda ok, err, _: self._on_download_done(ok, err, full_name)
+        )
+        self._dl_worker.start()
+
+    def _on_download_done(self, ok: bool, err: str, full_name: str):
+        self.btn_download.setEnabled(True)
+        if ok:
+            self.status.setText(self.i18n.t("download_success", full_name))
+        else:
+            self.status.setText(self.i18n.t("download_failed", err))
+            QMessageBox.warning(self, self.i18n.t("error"), self.i18n.t("download_failed", err))
 
     def _on_error(self, msg: str):
         self.btn_refresh.setEnabled(True)

@@ -213,12 +213,43 @@ class OllamaManager:
             if result.returncode != 0:
                 return ToolResult(success=False, error=result.stderr.strip())
             info: dict = {"raw": result.stdout}
-            # Parse some structured fields
+            section = ""
             for line in result.stdout.splitlines():
-                line = line.strip()
-                if ":" in line:
-                    k, v = line.split(":", 1)
-                    info[k.strip().lower().replace(" ", "_")] = v.strip()
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                # Section headers: 2-space indent, single word/phrase, no value
+                # e.g. "  Model", "  Capabilities", "  Parameters", "  License"
+                if line.startswith("  ") and not line.startswith("    "):
+                    section = stripped.lower()
+                    continue
+                # Key-value pairs: 4+ space indent, key and value separated by 2+ spaces
+                # e.g. "    architecture        qwen3"
+                if line.startswith("    "):
+                    parts = re.split(r"\s{2,}", stripped, maxsplit=1)
+                    if len(parts) == 2:
+                        key = parts[0].strip().lower().replace(" ", "_")
+                        val = parts[1].strip()
+                        # Accumulate duplicate keys (e.g. multiple "stop" values)
+                        if key in info:
+                            existing = info[key]
+                            if isinstance(existing, list):
+                                existing.append(val)
+                            else:
+                                info[key] = [existing, val]
+                        else:
+                            info[key] = val
+                    elif len(parts) == 1 and section == "capabilities":
+                        # Capability entries have no value, just the name
+                        caps = info.get("capabilities", [])
+                        if isinstance(caps, str):
+                            caps = [caps]
+                        caps.append(stripped)
+                        info["capabilities"] = caps
+            # Convert lists to comma-separated strings for display
+            for key, val in info.items():
+                if isinstance(val, list):
+                    info[key] = ", ".join(val)
             return ToolResult(success=True, data=info, metadata={"model": model_name})
         except Exception as exc:
             return ToolResult(success=False, error=str(exc))

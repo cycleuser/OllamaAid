@@ -87,6 +87,19 @@ class TrendData:
         }
 
 
+def parse_param_tags(param_details: str) -> list[str]:
+    """Parse param_details string into lowercase Ollama-compatible tags.
+
+    >>> parse_param_tags("0.8B, 2B, 4B, 9B")
+    ['0.8b', '2b', '4b', '9b']
+    >>> parse_param_tags("")
+    []
+    """
+    if not param_details:
+        return []
+    return [t.strip().lower() for t in param_details.split(",") if t.strip()]
+
+
 # ---------------------------------------------------------------------------
 # Testing
 # ---------------------------------------------------------------------------

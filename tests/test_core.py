@@ -7,6 +7,7 @@ from ollama_aid.core.models import (
     ModelInfo, TestMetrics, TestResult, TestScenario,
     TrendData, RunnerConfig, RunnerBackend,
     MODELFILE_TEMPLATES, DEFAULT_TEST_SCENARIOS, ToolResult,
+    parse_param_tags,
 )
 
 
@@ -53,6 +54,24 @@ class TestTrendData:
         assert d["name"] == "test"
         assert d["pulls"] == 1000
         assert d["tags"] == ["chat", "code"]
+
+
+class TestParseParamTags:
+    def test_typical(self):
+        assert parse_param_tags("0.8B, 2B, 4B, 9B") == ["0.8b", "2b", "4b", "9b"]
+
+    def test_empty(self):
+        assert parse_param_tags("") == []
+        assert parse_param_tags(None) == []
+
+    def test_single(self):
+        assert parse_param_tags("7B") == ["7b"]
+
+    def test_m_suffix(self):
+        assert parse_param_tags("500M, 1.5B") == ["500m", "1.5b"]
+
+    def test_whitespace(self):
+        assert parse_param_tags("  3B ,  7B  , 14B  ") == ["3b", "7b", "14b"]
 
 
 class TestTestModels:
@@ -170,3 +189,82 @@ class TestConfig:
         from ollama_aid.core.config import get_ollama_models_dir
         d = get_ollama_models_dir()
         assert "models" in str(d).lower() or "ollama" in str(d).lower()
+
+    def test_parse_size_sorting_order(self):
+        """Verify numeric sort order for typical Ollama size strings."""
+        from ollama_aid.core.manager import OllamaManager
+        sizes = ["274 MB", "522 MB", "731 MB", "1.0 GB", "1.9 GB"]
+        bytes_list = [OllamaManager._parse_size_to_bytes(s) for s in sizes]
+        assert bytes_list == sorted(bytes_list), "Size bytes should be in ascending order"
+
+
+class TestShowModelInfoParsing:
+    """Test the whitespace-aligned output parsing in show_model_info."""
+
+    def test_parse_sections(self):
+        from ollama_aid.core.manager import OllamaManager
+        import re
+        mgr = OllamaManager.__new__(OllamaManager)
+        mgr.ollama_path = "fake"
+        # Simulate ollama show output
+        fake_output = (
+            "  Model\n"
+            "    architecture        qwen3      \n"
+            "    parameters          751.63M    \n"
+            "    context length      40960      \n"
+            "    embedding length    1024       \n"
+            "    quantization        Q4_K_M     \n"
+            "\n"
+            "  Capabilities\n"
+            "    completion    \n"
+            "    tools         \n"
+            "    thinking      \n"
+            "\n"
+            "  Parameters\n"
+            "    stop              \"<|im_start|>\"    \n"
+            "    stop              \"<|im_end|>\"      \n"
+            "    temperature       0.6               \n"
+        )
+        info = {"raw": fake_output}
+        section = ""
+        for line in fake_output.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if line.startswith("  ") and not line.startswith("    "):
+                section = stripped.lower()
+                continue
+            if line.startswith("    "):
+                parts = re.split(r"\s{2,}", stripped, maxsplit=1)
+                if len(parts) == 2:
+                    key = parts[0].strip().lower().replace(" ", "_")
+                    val = parts[1].strip()
+                    if key in info:
+                        existing = info[key]
+                        if isinstance(existing, list):
+                            existing.append(val)
+                        else:
+                            info[key] = [existing, val]
+                    else:
+                        info[key] = val
+                elif len(parts) == 1 and section == "capabilities":
+                    caps = info.get("capabilities", [])
+                    if isinstance(caps, str):
+                        caps = [caps]
+                    caps.append(stripped)
+                    info["capabilities"] = caps
+        for key, val in info.items():
+            if isinstance(val, list):
+                info[key] = ", ".join(val)
+
+        assert info["architecture"] == "qwen3"
+        assert info["parameters"] == "751.63M"
+        assert info["context_length"] == "40960"
+        assert info["embedding_length"] == "1024"
+        assert info["quantization"] == "Q4_K_M"
+        assert "completion" in info["capabilities"]
+        assert "tools" in info["capabilities"]
+        assert "thinking" in info["capabilities"]
+        assert "<|im_start|>" in info["stop"]
+        assert "<|im_end|>" in info["stop"]
+        assert info["temperature"] == "0.6"

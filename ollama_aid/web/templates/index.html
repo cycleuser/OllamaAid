@@ -70,7 +70,7 @@ tr:hover{background:rgba(233,69,96,.08)}
     <button class="btn-info" onclick="updateSelected()">Update</button>
   </div>
   <table>
-    <thead><tr><th>Name</th><th>Tag</th><th>ID</th><th>Size</th><th>Modified</th></tr></thead>
+    <thead><tr><th onclick="sortModels('name')">Name</th><th onclick="sortModels('tag')">Tag</th><th>ID</th><th onclick="sortModels('size_bytes')">Size</th><th onclick="sortModels('modified')">Modified</th></tr></thead>
     <tbody id="model-tbody"></tbody>
   </table>
   <div class="status" id="manager-status">Click Refresh to load models.</div>
@@ -80,6 +80,7 @@ tr:hover{background:rgba(233,69,96,.08)}
 <div id="trends" class="panel">
   <div class="controls">
     <button class="btn-primary" onclick="loadTrends()">Refresh Trends</button>
+    <button class="btn-success" onclick="downloadTrend()">Download</button>
   </div>
   <table>
     <thead><tr><th>Model</th><th>Pulls</th><th>Min Params</th><th>Max Params</th><th>Params</th><th>Tags</th><th>Updated</th><th>URL</th></tr></thead>
@@ -136,6 +137,8 @@ document.querySelectorAll('.tab').forEach(t=>{
 });
 
 let allModels=[];
+let modelSortKey='name';
+let modelSortAsc=true;
 
 async function api(url,opt){
   const r=await fetch(url,opt);
@@ -151,6 +154,16 @@ async function loadModels(){
   allModels=d.models||[];
   renderModels(allModels);
   document.getElementById('manager-status').textContent=`Loaded ${allModels.length} models`;
+}
+function sortModels(key){
+  if(modelSortKey===key){modelSortAsc=!modelSortAsc}else{modelSortKey=key;modelSortAsc=true}
+  const sorted=[...allModels].sort((a,b)=>{
+    let va=a[key],vb=b[key];
+    if(typeof va==='number'&&typeof vb==='number')return modelSortAsc?va-vb:vb-va;
+    va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();
+    return modelSortAsc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+  renderModels(sorted);
 }
 function renderModels(list){
   document.getElementById('model-tbody').innerHTML=list.map(m=>
@@ -184,9 +197,28 @@ async function loadTrends(){
   if(!d.success){document.getElementById('trends-status').textContent='Error: '+d.error;return;}
   const fmt=n=>n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':Math.round(n);
   document.getElementById('trends-tbody').innerHTML=(d.models||[]).map(m=>
-    `<tr><td>${m.name}</td><td>${fmt(m.pulls)}</td><td>${m.min_params?m.min_params.toFixed(1)+'B':'-'}</td><td>${m.max_params?m.max_params.toFixed(1)+'B':'-'}</td><td>${m.param_details||'-'}</td><td>${(m.tags||[]).join(', ')||'-'}</td><td>${m.updated||'-'}</td><td><a href="${m.url}" target="_blank" style="color:var(--blue)">${m.url}</a></td></tr>`
+    `<tr onclick="this.classList.toggle('selected')" data-name="${m.name}" data-params="${m.param_details||''}" style="cursor:pointer"><td>${m.name}</td><td>${fmt(m.pulls)}</td><td>${m.min_params?m.min_params.toFixed(1)+'B':'-'}</td><td>${m.max_params?m.max_params.toFixed(1)+'B':'-'}</td><td>${m.param_details||'-'}</td><td>${(m.tags||[]).join(', ')||'-'}</td><td>${m.updated||'-'}</td><td><a href="${m.url}" target="_blank" style="color:var(--blue)">${m.url}</a></td></tr>`
   ).join('');
   document.getElementById('trends-status').textContent=`Loaded ${(d.models||[]).length} models`;
+}
+async function downloadTrend(){
+  const sel=document.querySelector('#trends-tbody tr.selected');
+  if(!sel)return alert('Select a model first');
+  const name=sel.dataset.name;
+  const params=sel.dataset.params;
+  const tags=params?params.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean):[];
+  let tag;
+  if(tags.length>0){
+    tag=prompt('Available sizes: '+tags.join(', ')+'\nEnter size to download:',tags[0]);
+  }else{
+    tag=prompt('Enter tag to download (e.g., 7b, latest):','latest');
+  }
+  if(!tag)return;
+  tag=tag.trim().toLowerCase();
+  if(!confirm(`Download ${name}:${tag}?`))return;
+  document.getElementById('trends-status').innerHTML=`<span class="spinner"></span>Downloading ${name}:${tag}...`;
+  const d=await api('/api/trends/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model_name:name,tag})});
+  document.getElementById('trends-status').textContent=d.success?`Downloaded ${name}:${tag}`:'Error: '+d.error;
 }
 
 // Tester
