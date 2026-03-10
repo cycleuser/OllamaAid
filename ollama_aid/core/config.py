@@ -58,6 +58,25 @@ def get_ollama_models_dir() -> Path:
         return Path.home() / ".ollama" / "models"
 
 
+def _get_shell_path() -> Optional[str]:
+    """Try to get the full PATH from the user's interactive shell.
+
+    When launched from a GUI or a non-interactive context, the process may
+    not have the same PATH as the user's terminal.  This reads it from
+    ``bash -ic 'echo $PATH'`` so that ``.bashrc`` additions are included.
+    """
+    try:
+        result = subprocess.run(
+            ["bash", "-ic", "echo $PATH"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return None
+
+
 def find_backend(backend: str) -> Optional[str]:
     """Locate vLLM or llama.cpp server executable."""
     if backend == "vllm":
@@ -77,24 +96,48 @@ def find_backend(backend: str) -> Optional[str]:
         return None
 
     if backend in ("llama.cpp", "llama-cpp", "llamacpp"):
-        for name in ("llama-server", "llama-cpp-server", "server"):
+        names = ("llama-server", "llama-cli", "llama-cpp-server", "server")
+        # First try the current process PATH
+        for name in names:
             exe = shutil.which(name)
             if exe:
                 return exe
+        # Try user's interactive shell PATH (picks up .bashrc additions)
+        shell_path = _get_shell_path()
+        if shell_path:
+            for name in names:
+                exe = shutil.which(name, path=shell_path)
+                if exe:
+                    return exe
         # Common build paths
         candidates = []
         system = platform.system()
+        home = Path.home()
         if system == "Windows":
             candidates = [
                 r"C:\llama.cpp\build\bin\Release\llama-server.exe",
                 r"C:\llama.cpp\build\bin\llama-server.exe",
+                r"C:\llama.cpp\build\bin\Release\llama-cli.exe",
+                r"C:\llama.cpp\build\bin\llama-cli.exe",
                 os.path.expandvars(r"%USERPROFILE%\llama.cpp\build\bin\Release\llama-server.exe"),
             ]
         else:
-            candidates = [
-                "/usr/local/bin/llama-server",
-                str(Path.home() / "llama.cpp" / "build" / "bin" / "llama-server"),
-                str(Path.home() / "llama.cpp" / "llama-server"),
+            # Search common development directories
+            build_dirs = [
+                home / "llama.cpp" / "build" / "bin",
+                home / "Documents" / "GitHub" / "llama.cpp" / "build" / "bin",
+                home / "projects" / "llama.cpp" / "build" / "bin",
+                home / "src" / "llama.cpp" / "build" / "bin",
+                home / "git" / "llama.cpp" / "build" / "bin",
+            ]
+            candidates = ["/usr/local/bin/llama-server", "/usr/local/bin/llama-cli"]
+            for d in build_dirs:
+                for name in ("llama-server", "llama-cli"):
+                    candidates.append(str(d / name))
+            # Also flat paths
+            candidates += [
+                str(home / "llama.cpp" / "llama-server"),
+                str(home / "llama.cpp" / "llama-cli"),
             ]
         for c in candidates:
             if os.path.isfile(c):

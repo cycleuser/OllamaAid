@@ -124,6 +124,7 @@ class I18n:
                 "server_failed": "Failed to start server: {}",
                 "model_path_resolved": "Model path: {}",
                 "no_backend_found": "Backend '{}' not found. Please install it.",
+                "ollama_not_running": "Cannot connect to Ollama service. Please ensure it is running.",
             },
             "zh": {
                 # General
@@ -237,6 +238,7 @@ class I18n:
                 "server_failed": "启动服务失败：{}",
                 "model_path_resolved": "模型路径：{}",
                 "no_backend_found": "未找到后端 '{}'，请先安装。",
+                "ollama_not_running": "无法连接Ollama服务，请确保其正在运行。",
             },
         }
 

@@ -1,0 +1,8 @@
+(vllm) fred@laptop:~/Documents/GitHub/OllamaAid$ ollama-aid --gui
+malloc_consolidate(): unaligned fastbin chunk detected
+Aborted (core dumped)
+llama-cli 也运行失败了
+
+
+Download failed: pull model manifest: file does not exist
+比如 lfm2:2b 模型下载失败

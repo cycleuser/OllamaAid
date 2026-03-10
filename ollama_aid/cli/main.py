@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from typing import Optional
 
@@ -200,6 +201,7 @@ def cmd_test(args):
 
 def cmd_run(args):
     from ollama_aid.api import run_with_backend, stop_backend
+    log = logging.getLogger("ollama_aid.cli")
     if args.stop:
         result = stop_backend()
         if result.success:
@@ -209,7 +211,14 @@ def cmd_run(args):
         return
 
     extra = args.extra_args.split() if args.extra_args else []
+    verbose = getattr(args, "verbose", False)
     print(f"Starting {args.backend} server for {args.model}...")
+    log.debug("run_with_backend(model=%s, backend=%s, host=%s, port=%s)",
+              args.model, args.backend, args.host, args.port)
+
+    def _log_line(line):
+        print(f"  [server] {line}")
+
     result = run_with_backend(
         model_name=args.model,
         backend=args.backend,
@@ -223,6 +232,7 @@ def cmd_run(args):
         dtype=args.dtype,
         max_model_len=args.max_model_len,
         extra_args=extra,
+        log_cb=_log_line if verbose else None,
     )
     if args.json_output:
         _json_out(result.to_dict())
@@ -262,6 +272,188 @@ def cmd_resolve(args):
 
 
 # ======================================================================
+# GUI launcher with subprocess isolation
+# ======================================================================
+
+
+def _make_gui_env(verbose: bool = False, force_xcb: bool = False) -> dict:
+    """Build a sanitised environment dict for the GUI subprocess.
+
+    Removes LD_LIBRARY_PATH / LD_PRELOAD entries that point to CUDA /
+    NVIDIA / PyTorch / vLLM libraries so they cannot interfere with Qt.
+    """
+    import os
+    import re
+
+    env = os.environ.copy()
+
+    # Force software OpenGL to avoid GPU driver conflicts
+    env["QT_OPENGL"] = "software"
+
+    if force_xcb:
+        env["QT_QPA_PLATFORM"] = "xcb"
+
+    if verbose:
+        env["QT_DEBUG_PLUGINS"] = "1"
+        env["QT_LOGGING_RULES"] = "*.debug=true"
+
+    # Strip library-path entries that drag in CUDA / NVIDIA / torch libs
+    _POISON = re.compile(
+        r"(cuda|nvidia|nccl|cudnn|cupti|cublas|cufft|curand|cusolver|"
+        r"cusparse|torch|pytorch|vllm)",
+        re.IGNORECASE,
+    )
+    for var in ("LD_LIBRARY_PATH", "LD_PRELOAD"):
+        val = env.get(var)
+        if not val:
+            continue
+        cleaned = os.pathsep.join(
+            p for p in val.split(os.pathsep) if not _POISON.search(p)
+        )
+        if cleaned:
+            env[var] = cleaned
+        else:
+            env.pop(var, None)
+
+    return env
+
+
+def _run_gui_subprocess(env: dict, verbose: bool = False):
+    """Spawn the GUI subprocess and wait for it.  Returns the exit code."""
+    import signal
+    import subprocess
+
+    cmd = [sys.executable, "-u", "-m", "ollama_aid.gui.main"]
+
+    venv = env.get("VIRTUAL_ENV") or env.get("CONDA_PREFIX")
+    print("[ollama-aid] Launching GUI  (PID will follow)", file=sys.stderr)
+    if venv:
+        print(f"[ollama-aid] Active environment: {venv}", file=sys.stderr)
+    platform = env.get("QT_QPA_PLATFORM", "(auto)")
+    print(f"[ollama-aid] QT_QPA_PLATFORM={platform}", file=sys.stderr)
+    print(f"[ollama-aid] Command: {' '.join(cmd)}", file=sys.stderr)
+    sys.stderr.flush()
+
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            env=env,
+        )
+    except FileNotFoundError:
+        print(
+            "Error: Python executable not found.\n"
+            "Install PySide6 with:  pip install ollama-aid[gui]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print(f"[ollama-aid] GUI process started (PID {proc.pid})", file=sys.stderr)
+    sys.stderr.flush()
+
+    def _forward_signal(signum, _frame):
+        try:
+            proc.send_signal(signum)
+        except OSError:
+            pass
+
+    prev_int = signal.signal(signal.SIGINT, _forward_signal)
+    prev_term = signal.signal(signal.SIGTERM, _forward_signal)
+
+    try:
+        rc = proc.wait()
+    finally:
+        signal.signal(signal.SIGINT, prev_int)
+        signal.signal(signal.SIGTERM, prev_term)
+
+    return rc
+
+
+def _launch_gui(verbose: bool = False) -> None:
+    """Launch the PySide6 GUI in a **subprocess**.
+
+    Running the GUI in a separate process avoids C-level segfaults caused
+    by shared-library conflicts when the CLI process has already loaded
+    packages such as PyTorch/vLLM whose native libraries clash with Qt.
+
+    If the first attempt crashes (SIGSEGV / SIGABRT), the launcher
+    automatically retries once with ``QT_QPA_PLATFORM=xcb`` which avoids
+    Wayland-specific driver issues on NVIDIA systems.
+    """
+    import signal
+
+    env = _make_gui_env(verbose=verbose)
+    rc = _run_gui_subprocess(env, verbose=verbose)
+
+    # Normal exit
+    if rc == 0:
+        return
+
+    # SIGTERM / SIGINT are normal shutdown (Ctrl-C, window manager close)
+    if rc < 0 and -rc in (signal.SIGTERM, signal.SIGINT):
+        sys.exit(0)
+
+    # Crashed with SIGSEGV/SIGABRT – auto-retry with xcb if we haven't already
+    is_crash = rc < 0 and -rc in (signal.SIGSEGV, signal.SIGABRT)
+    already_xcb = env.get("QT_QPA_PLATFORM") == "xcb"
+
+    if is_crash and not already_xcb:
+        signame = _sig_name(-rc)
+        print(
+            f"\n[ollama-aid] GUI crashed ({signame}) on platform "
+            f"'{env.get('QT_QPA_PLATFORM', 'auto')}'.",
+            file=sys.stderr,
+        )
+        print(
+            "[ollama-aid] Retrying with QT_QPA_PLATFORM=xcb ...\n",
+            file=sys.stderr,
+        )
+        env2 = _make_gui_env(verbose=verbose, force_xcb=True)
+        rc = _run_gui_subprocess(env2, verbose=verbose)
+        if rc == 0:
+            return
+        if rc < 0 and -rc in (signal.SIGTERM, signal.SIGINT):
+            sys.exit(0)
+
+    # Still failing – print diagnostics
+    if rc < 0:
+        signame = _sig_name(-rc)
+        print(
+            f"\n{'=' * 60}\n"
+            f"ERROR: GUI process killed by signal {-rc} ({signame}).\n"
+            f"{'=' * 60}",
+            file=sys.stderr,
+        )
+        if "SEGV" in signame or "ABRT" in signame:
+            print(
+                "\nThis is typically caused by native library conflicts\n"
+                "(e.g. PyTorch/vLLM CUDA libs vs PySide6/Qt).\n"
+                "\n--- Suggestions ---\n"
+                "  1. Run outside the current virtualenv:\n"
+                "       deactivate && ollama-aid --gui\n"
+                "  2. Use the web dashboard instead:\n"
+                "       ollama-aid --web\n"
+                "  3. Install PySide6 in a clean venv:\n"
+                "       python -m venv ~/gui-env && ~/gui-env/bin/pip install ollama-aid[gui]\n"
+                "       ~/gui-env/bin/ollama-aid --gui",
+                file=sys.stderr,
+            )
+        sys.exit(1)
+    else:
+        print(f"[ollama-aid] GUI exited with code {rc}", file=sys.stderr)
+        sys.exit(rc)
+
+
+def _sig_name(signum: int) -> str:
+    import signal
+    try:
+        return signal.Signals(signum).name
+    except (ValueError, AttributeError):
+        return "unknown"
+
+
+# ======================================================================
 # Main entry
 # ======================================================================
 
@@ -272,6 +464,10 @@ def main(argv: Optional[list[str]] = None) -> None:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--json", action="store_true", dest="json_output", help="Output as JSON")
     common.add_argument("-q", "--quiet", action="store_true", help="Suppress non-essential output")
+    common.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Enable verbose / debug logging",
+    )
 
     parser = argparse.ArgumentParser(
         prog="ollama-aid",
@@ -363,10 +559,17 @@ def main(argv: Optional[list[str]] = None) -> None:
 
     args = parser.parse_args(argv)
 
+    # Configure logging level based on --verbose / -v
+    log_level = logging.DEBUG if getattr(args, "verbose", False) else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format="[%(name)s] %(levelname)s: %(message)s",
+        stream=sys.stderr,
+    )
+
     # --gui: launch PySide6 GUI (no subcommand needed)
     if args.gui:
-        from ollama_aid.gui.main import main as gui_main
-        gui_main()
+        _launch_gui(verbose=getattr(args, "verbose", False))
         return
 
     # --web: launch Flask web dashboard (no subcommand needed)

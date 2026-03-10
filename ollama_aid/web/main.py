@@ -105,7 +105,7 @@ def api_trends_download():
         return jsonify({"success": False, "error": "model_name and tag are required"}), 400
     full_name = f"{model_name}:{tag}"
     from ollama_aid.core.manager import OllamaManager
-    result = OllamaManager().update_model(full_name)
+    result = OllamaManager().pull_model(full_name)
     return jsonify(result.to_dict())
 
 

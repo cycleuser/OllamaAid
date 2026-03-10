@@ -118,23 +118,26 @@ def fetch_trends() -> ToolResult:
                     pulls = _parse_number(m.group(1))
                     break
 
-            # Parameters
+            # Parameters -- preserve original text for Ollama tag compatibility
+            # Avoid matching pull/download counts like "1.9M Pulls"
             param_values: list[float] = []
             param_details: list[str] = []
-            for pat in (r"(\d+(?:\.\d+)?)[bB](?!\w)", r"(\d+(?:\.\d+)?)[mM](?!\w)"):
+            for pat in (r"(\d+(?:\.\d+)?)[bB](?!\w)", r"(\d+(?:\.\d+)?)[mM](?![a-zA-Z]|\s*[Pp]ulls|\s*[Dd]ownload)"):
                 for m in re.finditer(pat, card_text):
-                    val = float(m.group(1))
+                    orig = m.group(1)     # e.g. "2", "0.8", "14"
+                    val = float(orig)
                     if "m" in pat.lower():
-                        param_details.append(f"{val}M")
+                        param_details.append(f"{orig}M")
                         val /= 1000
                     else:
-                        param_details.append(f"{val}B")
+                        param_details.append(f"{orig}B")
                     if val > 0.01:
                         param_values.append(val)
 
             min_p = min(param_values) if param_values else 0.0
             max_p = max(param_values) if param_values else 0.0
-            pd_str = ", ".join(sorted(set(param_details))) if param_details else ""
+            unique_details = sorted(set(param_details), key=lambda s: float(re.match(r"[\d.]+", s).group()) if re.match(r"[\d.]+", s) else 0)
+            pd_str = ", ".join(unique_details) if unique_details else ""
 
             # Tags
             text_lower = card_text.lower()

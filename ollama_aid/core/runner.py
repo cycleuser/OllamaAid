@@ -136,23 +136,40 @@ class ExternalRunner:
         if self.is_running:
             return ToolResult(success=False, error="Server is already running")
 
+        log.info("Runner start requested: backend=%s model=%s",
+                 config.backend.value, config.model_name or config.model_path)
+
         # Resolve model path from Ollama if not absolute
         if not config.model_path or not Path(config.model_path).exists():
             if config.model_name:
+                log.info("Resolving model '%s' to disk path...", config.model_name)
                 res = self.resolve_model(config.model_name)
                 if not res.success:
+                    log.error("Model resolve failed: %s", res.error)
                     return res
                 config.model_path = res.data["model_path"]
+                log.info("Resolved model path: %s", config.model_path)
             else:
                 return ToolResult(success=False, error="No model_path or model_name specified")
 
         backend_name = config.backend.value
+        log.info("Looking for backend '%s'...", backend_name)
         backend_exe = find_backend(backend_name)
         if not backend_exe:
+            if backend_name in ("llama.cpp", "llama-cpp", "llamacpp"):
+                searched = "llama-server, llama-cli, llama-cpp-server, server"
+            elif backend_name == "vllm":
+                searched = "vllm, python -m vllm.entrypoints.openai.api_server"
+            else:
+                searched = backend_name
+            log.error("Backend not found. Searched: %s", searched)
             return ToolResult(
                 success=False,
-                error=f"Backend '{backend_name}' not found. Please install it.",
+                error=f"Backend '{backend_name}' not found. "
+                      f"Searched for: {searched}. "
+                      f"Please install it and ensure the binary is on your PATH.",
             )
+        log.info("Using backend executable: %s", backend_exe)
 
         if config.backend == RunnerBackend.LLAMA_CPP:
             cmd = self._build_llamacpp_cmd(config, backend_exe)
@@ -177,10 +194,13 @@ class ExternalRunner:
             self._running = True
 
             # Background thread to relay logs
+            collected_lines: list[str] = []
+
             def _reader():
                 assert self._process is not None and self._process.stdout is not None
                 for line in self._process.stdout:
                     line = line.rstrip()
+                    collected_lines.append(line)
                     if log_cb:
                         log_cb(line)
                     if not self._running:
@@ -188,6 +208,26 @@ class ExternalRunner:
 
             self._log_thread = threading.Thread(target=_reader, daemon=True)
             self._log_thread.start()
+
+            # Brief grace period to detect immediate crashes (e.g. model
+            # load failures).  If the process exits within a few seconds it
+            # almost certainly failed to start.  We poll several times to
+            # catch both fast failures and slower GPU-init failures.
+            for _ in range(10):
+                time.sleep(0.5)
+                if self._process.poll() is not None:
+                    break
+            if self._process.poll() is not None:
+                rc = self._process.returncode
+                self._log_thread.join(timeout=2)
+                # Collect last few log lines for error context
+                tail = "\n".join(collected_lines[-10:]) if collected_lines else "(no output)"
+                self._process = None
+                self._running = False
+                return ToolResult(
+                    success=False,
+                    error=f"Backend process exited immediately (code {rc}).\n{tail}",
+                )
 
             return ToolResult(
                 success=True,

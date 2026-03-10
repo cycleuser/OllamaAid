@@ -5,22 +5,37 @@ Tabbed interface combining model management, trends, testing and runner.
 
 from __future__ import annotations
 
+import faulthandler
+import os
 import sys
 import threading
 from typing import List, Optional
 
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QTabWidget, QWidget,
-    QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QTableWidget, QTableWidgetItem, QHeaderView,
-    QProgressBar, QComboBox, QLineEdit, QMessageBox,
-    QFileDialog, QTextEdit, QCheckBox, QGroupBox,
-    QSpinBox, QSplitter, QInputDialog, QFormLayout,
-)
-from PySide6.QtCore import Qt, QThread, Signal, Slot
-from PySide6.QtGui import QFont
+# Enable faulthandler so C-level crashes (SIGSEGV, SIGABRT) print a
+# Python-level traceback to stderr instead of silently aborting.
+faulthandler.enable()
 
-from ollama_aid.__version__ import __version__, __app_name_cn__
+# Set Qt environment variables before any PySide6 import to avoid
+# crashes from GPU driver / platform plugin conflicts (e.g. in vllm envs).
+os.environ.setdefault("QT_OPENGL", "software")
+
+_PYSIDE6_AVAILABLE = True
+try:
+    from PySide6.QtWidgets import (
+        QApplication, QMainWindow, QTabWidget, QWidget,
+        QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+        QTableWidget, QTableWidgetItem, QHeaderView,
+        QProgressBar, QComboBox, QLineEdit, QMessageBox,
+        QFileDialog, QTextEdit, QCheckBox, QGroupBox,
+        QSpinBox, QSplitter, QInputDialog, QFormLayout,
+    )
+    from PySide6.QtCore import Qt, QThread, Signal, Slot
+    from PySide6.QtGui import QFont
+except ImportError:
+    _PYSIDE6_AVAILABLE = False
+
+if _PYSIDE6_AVAILABLE:
+    from ollama_aid.__version__ import __version__, __app_name_cn__
 from ollama_aid.core.i18n import I18n
 from ollama_aid.core.models import (
     DEFAULT_TEST_SCENARIOS, ModelInfo, RunnerBackend,
@@ -477,7 +492,8 @@ class TrendsTab(QWidget):
         self.btn_download.setEnabled(False)
         self.status.setText(self.i18n.t("downloading", full_name))
         from ollama_aid.core.manager import OllamaManager
-        self._dl_worker = WorkerThread(OllamaManager().update_model, full_name)
+        self._dl_worker = WorkerThread(OllamaManager().pull_model, full_name)
+        self._dl_worker.progress.connect(self.status.setText)
         self._dl_worker.finished.connect(
             lambda ok, err, _: self._on_download_done(ok, err, full_name)
         )
@@ -831,12 +847,58 @@ class MainWindow(QMainWindow):
 
 
 def main():
-    app = QApplication(sys.argv)
-    app.setApplicationName("OllamaAid")
-    app.setApplicationVersion(__version__)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    if not _PYSIDE6_AVAILABLE:
+        print(
+            "Error: PySide6 is not installed.\n"
+            "Install it with:  pip install ollama-aid[gui]\n"
+            "Or:               pip install PySide6",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    import platform as _plat
+    import PySide6 as _pyside6_mod
+
+    print(f"[ollama-aid:gui] Python {sys.version.split()[0]}  "
+          f"PySide6 {_pyside6_mod.__version__}  "
+          f"OS {_plat.system()} {_plat.release()}",
+          file=sys.stderr, flush=True)
+    print(f"[ollama-aid:gui] QT_OPENGL={os.environ.get('QT_OPENGL', '(unset)')}  "
+          f"QT_QPA_PLATFORM={os.environ.get('QT_QPA_PLATFORM', '(unset)')}",
+          file=sys.stderr, flush=True)
+
+    venv = os.environ.get("VIRTUAL_ENV") or os.environ.get("CONDA_PREFIX")
+    if venv:
+        print(f"[ollama-aid:gui] Active environment: {venv}",
+              file=sys.stderr, flush=True)
+
+    try:
+        print("[ollama-aid:gui] Creating QApplication...",
+              file=sys.stderr, flush=True)
+        app = QApplication(sys.argv)
+        app.setApplicationName("OllamaAid")
+        app.setApplicationVersion(__version__)
+        print(f"[ollama-aid:gui] Platform plugin: {app.platformName()}",
+              file=sys.stderr, flush=True)
+
+        print("[ollama-aid:gui] Creating MainWindow...",
+              file=sys.stderr, flush=True)
+        window = MainWindow()
+        window.show()
+        print("[ollama-aid:gui] Window shown, entering event loop.",
+              file=sys.stderr, flush=True)
+
+        sys.exit(app.exec())
+    except Exception as exc:
+        print(
+            f"\n[ollama-aid:gui] ERROR: {exc}\n"
+            "This may be caused by a conflicting virtual environment.\n"
+            "Try running outside the current venv, or set:\n"
+            "  export QT_QPA_PLATFORM=xcb\n"
+            "  export QT_OPENGL=software",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

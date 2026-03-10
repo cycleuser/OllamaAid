@@ -1,6 +1,6 @@
 """
 OllamaAid - Ollama model management
-List, export, import, delete, update models via the Ollama CLI.
+List, export, import, delete, update models via the Ollama CLI and HTTP API.
 """
 
 import json
@@ -11,12 +11,14 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
-from .config import find_ollama, resolve_model_path
+from .config import find_ollama, is_ollama_running, resolve_model_path
 from .models import MODELFILE_TEMPLATES, ModelInfo, ToolResult
 
 log = logging.getLogger(__name__)
+
+OLLAMA_API_BASE = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 
 class OllamaManager:
@@ -49,6 +51,23 @@ class OllamaManager:
         unit = m.group(2)
         multiplier = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
         return int(val * multiplier.get(unit, 1))
+
+    @staticmethod
+    def _enrich_pull_error(model_name: str, raw_error: str) -> str:
+        """Add model name and guidance to a pull error message."""
+        msg = f"Failed to pull '{model_name}': {raw_error}"
+        lower = raw_error.lower()
+        if "file does not exist" in lower or "not found" in lower:
+            msg += (
+                "\nThe model name or tag may be incorrect. "
+                "Check available models at https://ollama.com/library"
+            )
+        elif "connection" in lower or "refused" in lower:
+            msg += (
+                "\nThe Ollama service may not be running. "
+                "Try: ollama serve"
+            )
+        return msg
 
     # ------------------------------------------------------------------
     # Model CRUD
@@ -193,16 +212,115 @@ class OllamaManager:
             return ToolResult(success=False, error=str(exc))
 
     def update_model(self, model_name: str) -> ToolResult:
-        """Pull the latest version of a model."""
+        """Pull the latest version of a model. Prefers HTTP API, falls back to CLI."""
+        return self.pull_model(model_name)
+
+    def pull_model(
+        self,
+        model_name: str,
+        progress_cb: Optional[Callable[[str], None]] = None,
+    ) -> ToolResult:
+        """Download / pull a model via the Ollama HTTP API.
+
+        Uses ``POST /api/pull`` so the Ollama *executable* does not need to
+        be on PATH -- only the Ollama service must be running.  Falls back to
+        the CLI (``ollama pull``) when the HTTP API is unreachable.
+        """
+        log.info("pull_model('%s') called", model_name)
+
+        try:
+            import requests
+        except ImportError:
+            log.info("'requests' not installed, falling back to CLI")
+            return self._pull_via_cli(model_name)
+
+        # Pre-check: is the Ollama service reachable?
+        log.info("Checking if Ollama service is running at %s ...", OLLAMA_API_BASE)
+        if not is_ollama_running():
+            log.warning("Ollama service not reachable at %s", OLLAMA_API_BASE)
+            return ToolResult(
+                success=False,
+                error=f"Cannot connect to the Ollama service at {OLLAMA_API_BASE}. "
+                      "Please ensure Ollama is running (try: ollama serve).",
+            )
+
+        url = f"{OLLAMA_API_BASE}/api/pull"
+        try:
+            resp = requests.post(
+                url,
+                json={"name": model_name},
+                stream=True,
+                timeout=(10, 600),
+            )
+            if resp.status_code != 200:
+                error_text = resp.text.strip()
+                try:
+                    error_text = resp.json().get("error", error_text)
+                except Exception:
+                    pass
+                return ToolResult(
+                    success=False,
+                    error=self._enrich_pull_error(model_name, error_text),
+                )
+
+            last_status = ""
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                try:
+                    msg = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if "error" in msg:
+                    return ToolResult(
+                        success=False,
+                        error=self._enrich_pull_error(model_name, msg["error"]),
+                    )
+                status = msg.get("status", "")
+                if status:
+                    last_status = status
+                if progress_cb:
+                    total = msg.get("total", 0)
+                    completed = msg.get("completed", 0)
+                    if total and completed:
+                        pct = int(completed * 100 / total)
+                        progress_cb(f"{status} {pct}%")
+                    elif status:
+                        progress_cb(status)
+
+            return ToolResult(
+                success=True,
+                data={"model": model_name, "status": last_status},
+            )
+        except requests.ConnectionError:
+            log.info("Ollama HTTP API unreachable, falling back to CLI")
+            return self._pull_via_cli(model_name)
+        except Exception as exc:
+            return ToolResult(
+                success=False,
+                error=self._enrich_pull_error(model_name, str(exc)),
+            )
+
+    def _pull_via_cli(self, model_name: str) -> ToolResult:
+        """Fallback: pull a model using the ``ollama pull`` CLI command."""
         if not self.ollama_path:
-            return ToolResult(success=False, error="Ollama executable not found")
+            return ToolResult(
+                success=False,
+                error="Ollama not found. Make sure the Ollama service is running.",
+            )
         try:
             result = self._run(["pull", model_name], timeout=600)
             if result.returncode != 0:
-                return ToolResult(success=False, error=result.stderr.strip())
-            return ToolResult(success=True, data={"updated": model_name})
+                return ToolResult(
+                    success=False,
+                    error=self._enrich_pull_error(model_name, result.stderr.strip()),
+                )
+            return ToolResult(success=True, data={"model": model_name})
         except Exception as exc:
-            return ToolResult(success=False, error=str(exc))
+            return ToolResult(
+                success=False,
+                error=self._enrich_pull_error(model_name, str(exc)),
+            )
 
     def show_model_info(self, model_name: str) -> ToolResult:
         """Return detailed information about a model."""

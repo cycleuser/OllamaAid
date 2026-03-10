@@ -147,6 +147,7 @@ def run_with_backend(
     dtype: str = "auto",
     max_model_len: int = 0,
     extra_args: Optional[List[str]] = None,
+    log_cb=None,
 ) -> ToolResult:
     """Start an external inference server for an Ollama-managed model."""
     cfg = RunnerConfig(
@@ -163,7 +164,7 @@ def run_with_backend(
         max_model_len=max_model_len,
         extra_args=extra_args or [],
     )
-    return _get_runner().start(cfg)
+    return _get_runner().start(cfg, log_cb=log_cb)
 
 
 def stop_backend() -> ToolResult:
