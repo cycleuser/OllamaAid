@@ -3,7 +3,7 @@ OllamaAid - Ollama Model Management, Trends & Testing Assistant
 Version information - single source of truth
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __app_name__ = "ollama_aid"
 __app_name_cn__ = "Ollama助手"
 __author__ = "cycleuser"
