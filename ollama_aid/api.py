@@ -92,10 +92,14 @@ def show_model_info(
     return OllamaManager(ollama_path).show_model_info(model_name)
 
 
-def fetch_trends() -> ToolResult:
-    """Scrape Ollama model trend data from ollama.com/search."""
+def fetch_trends(*, limit: int = 100) -> ToolResult:
+    """Scrape Ollama model trend data from ollama.com/search.
+    
+    Args:
+        limit: Maximum number of models to return (default: 100, use -1 for all)
+    """
     from .core.trends import fetch_trends as _fetch
-    return _fetch()
+    return _fetch(limit=limit)
 
 
 def test_model(

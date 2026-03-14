@@ -134,7 +134,8 @@ def cmd_trends(args):
     from ollama_aid.api import fetch_trends
     if not args.quiet:
         print("Fetching trends from ollama.com...")
-    result = fetch_trends()
+    limit = getattr(args, "limit", 100)
+    result = fetch_trends(limit=limit)
     if args.json_output:
         data = [t.to_dict() for t in (result.data or [])]
         _json_out({"success": result.success, "models": data})
@@ -527,6 +528,7 @@ def main(argv: Optional[list[str]] = None) -> None:
 
     # --- trends ---
     p_trends = sub.add_parser("trends", parents=[common], help="Fetch model trends from ollama.com")
+    p_trends.add_argument("-l", "--limit", type=int, default=100, help="Max number of models (default: 100, -1 for all)")
     p_trends.set_defaults(func=cmd_trends)
 
     # --- test ---

@@ -1,8 +1,8 @@
-# OllamaAid -- Ollama模型管理、趋势分析与测试统一工具
+# OllamaAid -- Ollama模型管理、趋势分析与测试助手
 
 [English](README.md)
 
-OllamaAid 将 **OllamaTrendsViewer**、**OllamaModelManager** 和 **OllamaModelTester** 的功能整合为一个优雅的工具箱。提供模型管理、趋势分析、性能基准测试以及外部运行器集成（vLLM / llama.cpp）—— 全部通过 CLI、GUI 和 Web 三端访问。
+OllamaAid 提供模型管理、趋势分析、性能基准测试以及外部运行器集成（vLLM / llama.cpp）—— 全部通过 CLI、GUI 和 Web 三端访问。
 
 **项目地址:** [github.com/cycleuser/ollamaaid](http://github.com/cycleuser/ollamaaid)
 
@@ -16,6 +16,20 @@ OllamaAid 将 **OllamaTrendsViewer**、**OllamaModelManager** 和 **OllamaModelT
 - **中英双语** -- GUI 和 Web 界面支持英文/中文切换
 - **OpenAI Function-Calling** -- 提供 `TOOLS` + `dispatch()` 用于 LLM Agent 集成
 - **PyPI 就绪** -- 可通过 `pip install ollama-aid` 安装
+
+## 界面截图
+
+### 模型管理
+
+![模型管理](images/0-模型管理.jpg)
+
+### 趋势查看
+
+![趋势查看](images/1-趋势查看.jpg)
+
+### 性能评测
+
+![性能评测](images/2-性能评测.jpg)
 
 ## 系统要求
 
