@@ -14,7 +14,7 @@ class I18n:
         self._translations: Dict[str, Dict[str, str]] = {
             "en": {
                 # General
-                "app_title": "OllamaAid - Unified Ollama Toolkit",
+                "app_title": "OllamaAid - Ollama Assistant",
                 "language": "Language",
                 "error": "Error",
                 "success": "Success",
@@ -128,7 +128,7 @@ class I18n:
             },
             "zh": {
                 # General
-                "app_title": "OllamaAid - Ollama统一工具箱",
+                "app_title": "OllamaAid - Ollama助手",
                 "language": "语言",
                 "error": "错误",
                 "success": "成功",

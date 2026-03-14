@@ -10,12 +10,12 @@ from typing import Any, Dict, List, Optional
 
 
 # ---------------------------------------------------------------------------
-# ToolResult (unified API return type, following Chou-style pattern)
+# ToolResult (standard API return type)
 # ---------------------------------------------------------------------------
 
 @dataclass
 class ToolResult:
-    """Unified return type for all public API functions."""
+    """Standard return type for all public API functions."""
     success: bool
     data: Any = None
     error: Optional[str] = None

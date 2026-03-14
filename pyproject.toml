@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ollama-aid"
 dynamic = ["version"]
-description = "Unified Ollama model management, trends viewing, testing & external runner tool"
+description = "Ollama model management, trends viewing, testing & external runner assistant"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.10"

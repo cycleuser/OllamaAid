@@ -471,7 +471,7 @@ def main(argv: Optional[list[str]] = None) -> None:
 
     parser = argparse.ArgumentParser(
         prog="ollama-aid",
-        description="OllamaAid - Unified Ollama model management, trends & testing tool",
+        description="OllamaAid - Ollama model management, trends & testing assistant",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[common],
         epilog=(

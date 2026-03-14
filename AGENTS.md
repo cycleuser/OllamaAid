@@ -4,7 +4,7 @@ Guidelines for AI coding agents working on the OllamaAid codebase.
 
 ## Project Overview
 
-OllamaAid is a unified Ollama model management, trends viewing, and testing tool. It provides CLI, GUI (PySide6), and Web (Flask) interfaces for managing Ollama models, viewing model trends from ollama.com, benchmarking models, and running models via external backends (vLLM/llama.cpp).
+OllamaAid is an Ollama model management, trends viewing, and testing assistant. It provides CLI, GUI (PySide6), and Web (Flask) interfaces for managing Ollama models, viewing model trends from ollama.com, benchmarking models, and running models via external backends (vLLM/llama.cpp).
 
 ## Build / Install / Test Commands
 

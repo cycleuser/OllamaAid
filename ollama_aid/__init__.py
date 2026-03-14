@@ -1,5 +1,5 @@
 """
-OllamaAid - Unified Ollama Model Management, Trends & Testing Tool
+OllamaAid - Ollama Model Management, Trends & Testing Assistant
 """
 
 from .__version__ import __version__, __app_name__, __app_name_cn__

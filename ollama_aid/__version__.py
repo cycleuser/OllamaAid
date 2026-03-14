@@ -1,5 +1,5 @@
 """
-OllamaAid - Unified Ollama Model Management, Trends & Testing Tool
+OllamaAid - Ollama Model Management, Trends & Testing Assistant
 Version information - single source of truth
 """
 
@@ -8,5 +8,5 @@ __app_name__ = "ollama_aid"
 __app_name_cn__ = "Ollama助手"
 __author__ = "cycleuser"
 __email__ = ""
-__description__ = "Unified Ollama model management, trends viewing, testing & external runner tool"
+__description__ = "Ollama model management, trends viewing, testing & external runner assistant"
 __url__ = "https://github.com/cycleuser/OllamaAid"
