@@ -31,6 +31,11 @@ __all__ = [
     "run_with_backend",
     "stop_backend",
     "resolve_model_path",
+    "benchmark_embedding",
+    "benchmark_embeddings",
+    "benchmark_reranker",
+    "benchmark_rerankers",
+    "detect_model_type",
 ]
 
 
@@ -174,6 +179,119 @@ def run_with_backend(
 def stop_backend() -> ToolResult:
     """Stop the running external inference server."""
     return _get_runner().stop()
+
+
+# ---------------------------------------------------------------------------
+# Model type detection
+# ---------------------------------------------------------------------------
+
+def detect_model_type(model_name: str) -> str:
+    """Detect model type from its name.
+    
+    Returns one of: embedding, reranker, code, chat, vision, thinking, unknown
+    """
+    from .core.benchmark_data import detect_model_type as _detect
+    return _detect(model_name)
+
+
+# ---------------------------------------------------------------------------
+# Embedding model benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_embedding(
+    model: str,
+    language: str = "both",
+) -> ToolResult:
+    """Benchmark a single embedding model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "bge-large:335m")
+    language: "en", "zh", or "both"
+    
+    Returns
+    -------
+    ToolResult with EmbeddingBenchResult
+    
+    References
+    ----------
+    - MTEB: Muennighoff et al. (2023). https://arxiv.org/abs/2210.07316
+    - STS Benchmark: Cer et al. (2017). https://arxiv.org/abs/1708.00055
+    - BEIR: Thakur et al. (2021). https://arxiv.org/abs/2104.08663
+    """
+    from .core.embedder import benchmark_embedding as _bench
+    result = _bench(model, language=language)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_embeddings(
+    models: List[str],
+    language: str = "both",
+    progress_cb=None,
+) -> ToolResult:
+    """Benchmark multiple embedding models.
+    
+    Parameters
+    ----------
+    models: List of model names
+    language: "en", "zh", or "both"
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of EmbeddingBenchResult
+    """
+    from .core.embedder import benchmark_embeddings as _bench
+    return _bench(models, language=language, progress_cb=progress_cb)
+
+
+# ---------------------------------------------------------------------------
+# Reranker model benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_reranker(model: str) -> ToolResult:
+    """Benchmark a single reranker model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "dengcao/Qwen3-Reranker-4B:Q8_0")
+    
+    Returns
+    -------
+    ToolResult with RerankerBenchResult
+    
+    References
+    ----------
+    - BEIR: Thakur et al. (2021). https://arxiv.org/abs/2104.08663
+    - MS MARCO: Nguyen et al. (2016). https://arxiv.org/abs/1611.09268
+    """
+    from .core.reranker import benchmark_reranker as _bench
+    result = _bench(model)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_rerankers(models: List[str], progress_cb=None) -> ToolResult:
+    """Benchmark multiple reranker models.
+    
+    Parameters
+    ----------
+    models: List of model names
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of RerankerBenchResult
+    """
+    from .core.reranker import benchmark_rerankers as _bench
+    return _bench(models, progress_cb=progress_cb)
 
 
 # ---------------------------------------------------------------------------

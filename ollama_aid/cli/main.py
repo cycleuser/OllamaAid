@@ -272,6 +272,150 @@ def cmd_resolve(args):
         sys.exit(1)
 
 
+def cmd_bench(args):
+    from ollama_aid.api import (
+        benchmark_embeddings,
+        benchmark_rerankers,
+        detect_model_type,
+        list_models,
+    )
+    
+    models = [m.strip() for m in args.models.split(",") if m.strip()]
+    if not models:
+        models_result = list_models()
+        if not models_result.success:
+            print(f"Error: {models_result.error}", file=sys.stderr)
+            sys.exit(1)
+        all_models = [m.full_name for m in (models_result.data or [])]
+        if args.type == "embedding":
+            models = [m for m in all_models if detect_model_type(m) == "embedding"]
+        elif args.type == "reranker":
+            models = [m for m in all_models if detect_model_type(m) == "reranker"]
+        elif args.type == "chat":
+            models = [m for m in all_models if detect_model_type(m) in ("chat", "code")]
+        else:
+            models = all_models
+    
+    if not models:
+        print(f"No models found for type '{args.type}'", file=sys.stderr)
+        sys.exit(1)
+    
+    if not args.quiet:
+        print(f"Benchmarking {len(models)} model(s): {', '.join(models[:5])}{'...' if len(models) > 5 else ''}")
+    
+    def _progress(msg):
+        if not args.quiet:
+            print(f"  {msg}")
+    
+    if args.type == "embedding":
+        result = benchmark_embeddings(models, language=args.language, progress_cb=_progress)
+    elif args.type == "reranker":
+        result = benchmark_rerankers(models, progress_cb=_progress)
+    else:
+        embedding_models = [m for m in models if detect_model_type(m) == "embedding"]
+        reranker_models = [m for m in models if detect_model_type(m) == "reranker"]
+        chat_models = [m for m in models if detect_model_type(m) in ("chat", "code")]
+        
+        all_results = []
+        if embedding_models:
+            if not args.quiet:
+                print(f"\n[Embedding Models: {len(embedding_models)}]")
+            r = benchmark_embeddings(embedding_models, language=args.language, progress_cb=_progress)
+            if r.success:
+                all_results.extend(r.data)
+        if reranker_models:
+            if not args.quiet:
+                print(f"\n[Reranker Models: {len(reranker_models)}]")
+            r = benchmark_rerankers(reranker_models, progress_cb=_progress)
+            if r.success:
+                all_results.extend(r.data)
+        
+        if args.json_output:
+            _json_out({"success": len(all_results) > 0, "results": all_results})
+            return
+        
+        if not all_results:
+            print("No benchmark results.", file=sys.stderr)
+            sys.exit(1)
+        
+        print("\n" + "=" * 80)
+        print(f"{'Model':<40} {'Type':<12} {'Score':>8} {'Tests':>8}")
+        print("=" * 80)
+        for r in all_results:
+            if hasattr(r, 'success'):
+                model_type = "embedding" if hasattr(r.metrics, 'embedding_dim') else "reranker"
+                score = r.metrics.total_score
+                passed = r.metrics.tests_passed
+                total = r.metrics.tests_total
+                status = "OK" if r.success else "FAIL"
+                print(f"{r.model:<40} {model_type:<12} {score:>8.2f} {passed}/{total}")
+            else:
+                model_type = "embedding" if "embedding_dim" in r.get("metrics", {}) else "reranker"
+                score = r.get("metrics", {}).get("total_score", 0)
+                passed = r.get("metrics", {}).get("tests_passed", 0)
+                total = r.get("metrics", {}).get("tests_total", 0)
+                status = "OK" if r.get("success") else "FAIL"
+                print(f"{r['model']:<40} {model_type:<12} {score:>8.2f} {passed}/{total}")
+        print("=" * 80)
+        return
+    
+    if args.json_output:
+        _json_out(result.to_dict())
+        return
+    
+    if not result.success:
+        print(f"Error: {result.error}", file=sys.stderr)
+        sys.exit(1)
+    
+    results = result.data or []
+    if not results:
+        print("No benchmark results.")
+        return
+    
+    print("\n" + "=" * 80)
+    if args.type == "embedding":
+        print(f"{'Model':<40} {'Dim':>6} {'STS':>8} {'MRR':>8} {'Score':>8}")
+        print("=" * 80)
+        for r in results:
+            if hasattr(r, 'success'):
+                if r.success:
+                    m = r.metrics
+                    print(f"{r.model:<40} {m.embedding_dim:>6} "
+                          f"{m.sts_spearman:>8.4f} {m.retrieval_mrr:>8.4f} "
+                          f"{m.total_score:>8.2f}")
+                else:
+                    print(f"{r.model:<40} ERROR: {r.error}")
+            else:
+                if r.get("success"):
+                    m = r.get("metrics", {})
+                    print(f"{r['model']:<40} {m.get('embedding_dim', 0):>6} "
+                          f"{m.get('sts_spearman', 0):>8.4f} {m.get('retrieval_mrr', 0):>8.4f} "
+                          f"{m.get('total_score', 0):>8.2f}")
+                else:
+                    print(f"{r['model']:<40} ERROR: {r.get('error', 'unknown')}")
+    else:
+        print(f"{'Model':<40} {'NDCG':>8} {'MRR':>8} {'MAP':>8} {'Score':>8}")
+        print("=" * 80)
+        for r in results:
+            if hasattr(r, 'success'):
+                if r.success:
+                    m = r.metrics
+                    print(f"{r.model:<40} {m.ndcg_at_k:>8.4f} "
+                          f"{m.mrr:>8.4f} {m.map_score:>8.4f} "
+                          f"{m.total_score:>8.2f}")
+                else:
+                    print(f"{r.model:<40} ERROR: {r.error}")
+            else:
+                if r.get("success"):
+                    m = r.get("metrics", {})
+                    print(f"{r['model']:<40} {m.get('ndcg_at_k', 0):>8.4f} "
+                          f"{m.get('mrr', 0):>8.4f} {m.get('map_score', 0):>8.4f} "
+                          f"{m.get('total_score', 0):>8.2f}")
+                else:
+                    print(f"{r['model']:<40} ERROR: {r.get('error', 'unknown')}")
+    print("=" * 80)
+
+
 # ======================================================================
 # GUI launcher with subprocess isolation
 # ======================================================================
@@ -558,6 +702,15 @@ def main(argv: Optional[list[str]] = None) -> None:
     p_resolve = sub.add_parser("resolve", parents=[common], help="Resolve Ollama model to disk path")
     p_resolve.add_argument("model", help="Model name")
     p_resolve.set_defaults(func=cmd_resolve)
+
+    # --- bench ---
+    p_bench = sub.add_parser("bench", parents=[common], help="Benchmark models (embedding/reranker/chat)")
+    p_bench.add_argument("models", nargs="?", default="", help="Comma-separated model names (empty for all)")
+    p_bench.add_argument("-t", "--type", choices=["embedding", "reranker", "chat", "all"], default="all",
+                         help="Model type to benchmark (default: all)")
+    p_bench.add_argument("-l", "--language", choices=["en", "zh", "both"], default="both",
+                         help="Language for embedding benchmark (default: both)")
+    p_bench.set_defaults(func=cmd_bench)
 
     args = parser.parse_args(argv)
 

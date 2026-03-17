@@ -1,0 +1,732 @@
+Benchmarking 16 embedding model(s)...
+
+  Benchmarking all-minilm:22m...
+    Evaluating STS for all-minilm:22m...
+    Evaluating retrieval for all-minilm:22m...
+    Evaluating STS for all-minilm:22m...
+    Evaluating retrieval for all-minilm:22m...
+    Evaluating cross-lingual for all-minilm:22m...
+  Benchmarking all-minilm:33m...
+    Evaluating STS for all-minilm:33m...
+    Evaluating retrieval for all-minilm:33m...
+    Evaluating STS for all-minilm:33m...
+    Evaluating retrieval for all-minilm:33m...
+    Evaluating cross-lingual for all-minilm:33m...
+  Benchmarking bge-large:335m...
+    Evaluating STS for bge-large:335m...
+    Evaluating retrieval for bge-large:335m...
+    Evaluating STS for bge-large:335m...
+    Evaluating retrieval for bge-large:335m...
+    Evaluating cross-lingual for bge-large:335m...
+  Benchmarking bge-m3:567m...
+    Evaluating STS for bge-m3:567m...
+    Evaluating retrieval for bge-m3:567m...
+    Evaluating STS for bge-m3:567m...
+    Evaluating retrieval for bge-m3:567m...
+    Evaluating cross-lingual for bge-m3:567m...
+  Benchmarking embeddinggemma:latest...
+    Evaluating STS for embeddinggemma:latest...
+    Evaluating retrieval for embeddinggemma:latest...
+    Evaluating STS for embeddinggemma:latest...
+    Evaluating retrieval for embeddinggemma:latest...
+    Evaluating cross-lingual for embeddinggemma:latest...
+  Benchmarking granite-embedding:278m...
+    Evaluating STS for granite-embedding:278m...
+    Evaluating retrieval for granite-embedding:278m...
+    Evaluating STS for granite-embedding:278m...
+    Evaluating retrieval for granite-embedding:278m...
+    Evaluating cross-lingual for granite-embedding:278m...
+  Benchmarking granite-embedding:30m...
+    Evaluating STS for granite-embedding:30m...
+    Evaluating retrieval for granite-embedding:30m...
+    Evaluating STS for granite-embedding:30m...
+    Evaluating retrieval for granite-embedding:30m...
+    Evaluating cross-lingual for granite-embedding:30m...
+  Benchmarking mxbai-embed-large:335m...
+    Evaluating STS for mxbai-embed-large:335m...
+    Evaluating retrieval for mxbai-embed-large:335m...
+    Evaluating STS for mxbai-embed-large:335m...
+    Evaluating retrieval for mxbai-embed-large:335m...
+    Evaluating cross-lingual for mxbai-embed-large:335m...
+  Benchmarking nomic-embed-text:latest...
+    Evaluating STS for nomic-embed-text:latest...
+    Evaluating retrieval for nomic-embed-text:latest...
+    Evaluating STS for nomic-embed-text:latest...
+    Evaluating retrieval for nomic-embed-text:latest...
+    Evaluating cross-lingual for nomic-embed-text:latest...
+  Benchmarking nomic-embed-text-v2-moe:latest...
+    Evaluating STS for nomic-embed-text-v2-moe:latest...
+    Evaluating retrieval for nomic-embed-text-v2-moe:latest...
+    Evaluating STS for nomic-embed-text-v2-moe:latest...
+    Evaluating retrieval for nomic-embed-text-v2-moe:latest...
+    Evaluating cross-lingual for nomic-embed-text-v2-moe:latest...
+  Benchmarking paraphrase-multilingual:278m...
+    Evaluating STS for paraphrase-multilingual:278m...
+    Evaluating retrieval for paraphrase-multilingual:278m...
+    Evaluating STS for paraphrase-multilingual:278m...
+    Evaluating retrieval for paraphrase-multilingual:278m...
+    Evaluating cross-lingual for paraphrase-multilingual:278m...
+  Benchmarking qwen3-embedding:0.6b...
+    Evaluating STS for qwen3-embedding:0.6b...
+    Evaluating retrieval for qwen3-embedding:0.6b...
+    Evaluating STS for qwen3-embedding:0.6b...
+    Evaluating retrieval for qwen3-embedding:0.6b...
+    Evaluating cross-lingual for qwen3-embedding:0.6b...
+  Benchmarking qwen3-embedding:4b...
+    Evaluating STS for qwen3-embedding:4b...
+    Evaluating retrieval for qwen3-embedding:4b...
+    Evaluating STS for qwen3-embedding:4b...
+    Evaluating retrieval for qwen3-embedding:4b...
+    Evaluating cross-lingual for qwen3-embedding:4b...
+  Benchmarking qwen3-embedding:8b...
+    Evaluating STS for qwen3-embedding:8b...
+    Evaluating retrieval for qwen3-embedding:8b...
+    Evaluating STS for qwen3-embedding:8b...
+    Evaluating retrieval for qwen3-embedding:8b...
+    Evaluating cross-lingual for qwen3-embedding:8b...
+  Benchmarking snowflake-arctic-embed:22m...
+    Evaluating STS for snowflake-arctic-embed:22m...
+    Evaluating retrieval for snowflake-arctic-embed:22m...
+    Evaluating STS for snowflake-arctic-embed:22m...
+    Evaluating retrieval for snowflake-arctic-embed:22m...
+    Evaluating cross-lingual for snowflake-arctic-embed:22m...
+  Benchmarking snowflake-arctic-embed2:568m...
+    Evaluating STS for snowflake-arctic-embed2:568m...
+    Evaluating retrieval for snowflake-arctic-embed2:568m...
+    Evaluating STS for snowflake-arctic-embed2:568m...
+    Evaluating retrieval for snowflake-arctic-embed2:568m...
+    Evaluating cross-lingual for snowflake-arctic-embed2:568m...
+{
+  "success": true,
+  "metadata": {
+    "total": 16,
+    "successful": 16,
+    "failed": 0
+  },
+  "results": [
+    {
+      "model": "all-minilm:22m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 384,
+        "avg_latency_ms": 45.5,
+        "sts_spearman": 0.6089,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.2427,
+        "total_score": 88.49,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6089,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.192,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 0.9,
+          "recall_at_3": 0.7833,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.2427,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "all-minilm:33m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 384,
+        "avg_latency_ms": 54.36,
+        "sts_spearman": 0.6786,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.2851,
+        "total_score": 90.96,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6786,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.1277,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 0.9,
+          "recall_at_3": 0.7333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.2851,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "bge-large:335m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 1024,
+        "avg_latency_ms": 96.93,
+        "sts_spearman": 0.5589,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.5607,
+        "total_score": 87.97,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.5589,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.2366,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.8333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.5607,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "bge-m3:567m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 1024,
+        "avg_latency_ms": 234.69,
+        "sts_spearman": 0.4625,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.8298,
+        "total_score": 85.56,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.4625,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.3027,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.8298,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "embeddinggemma:latest",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 768,
+        "avg_latency_ms": 211.69,
+        "sts_spearman": 0.6946,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.9523,
+        "total_score": 91.37,
+        "tests_passed": 4,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6946,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.3259,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.9523,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "granite-embedding:278m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 768,
+        "avg_latency_ms": 206.38,
+        "sts_spearman": 0.6429,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.9301,
+        "total_score": 90.07,
+        "tests_passed": 5,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6429,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.5705,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.8333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.9301,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "granite-embedding:30m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 384,
+        "avg_latency_ms": 60.36,
+        "sts_spearman": 0.6071,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.5928,
+        "total_score": 89.18,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6071,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": -0.0991,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 0.9,
+          "recall_at_3": 0.7333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.5928,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "mxbai-embed-large:335m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 1024,
+        "avg_latency_ms": 75.75,
+        "sts_spearman": 0.5946,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.5623,
+        "total_score": 88.87,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.5946,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.4491,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.8333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.5623,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "nomic-embed-text:latest",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 768,
+        "avg_latency_ms": 59.14,
+        "sts_spearman": 0.6929,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.8833,
+        "cross_lingual_score": 0.5135,
+        "total_score": 89.99,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6929,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.8833,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": -0.0098,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 0.9,
+          "recall_at_3": 0.7833,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.5135,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "nomic-embed-text-v2-moe:latest",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 768,
+        "avg_latency_ms": 226.93,
+        "sts_spearman": 0.7134,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.6734,
+        "total_score": 91.83,
+        "tests_passed": 5,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6446,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.7134,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.6734,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "paraphrase-multilingual:278m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 768,
+        "avg_latency_ms": 204.93,
+        "sts_spearman": 0.4884,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.9272,
+        "total_score": 86.21,
+        "tests_passed": 3,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.4339,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.4884,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.9272,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "qwen3-embedding:0.6b",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 1024,
+        "avg_latency_ms": 179.12,
+        "sts_spearman": 0.708,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.7712,
+        "total_score": 91.7,
+        "tests_passed": 4,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.4589,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.708,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.7712,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "qwen3-embedding:4b",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 2560,
+        "avg_latency_ms": 527.04,
+        "sts_spearman": 0.6304,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.7914,
+        "total_score": 89.76,
+        "tests_passed": 5,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6304,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.5259,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.7914,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "qwen3-embedding:8b",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 4096,
+        "avg_latency_ms": 870.69,
+        "sts_spearman": 0.6268,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.8105,
+        "total_score": 89.67,
+        "tests_passed": 5,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6268,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.5402,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.8105,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "snowflake-arctic-embed:22m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 384,
+        "avg_latency_ms": 37.99,
+        "sts_spearman": 0.6286,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.8666,
+        "total_score": 89.71,
+        "tests_passed": 4,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.6286,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.208,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.7333,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.8666,
+          "samples": 15
+        }
+      }
+    },
+    {
+      "model": "snowflake-arctic-embed2:568m",
+      "success": true,
+      "metrics": {
+        "embedding_dim": 1024,
+        "avg_latency_ms": 271.14,
+        "sts_spearman": 0.6366,
+        "retrieval_mrr": 1.0,
+        "retrieval_recall_at_k": 0.95,
+        "cross_lingual_score": 0.7183,
+        "total_score": 89.92,
+        "tests_passed": 5,
+        "tests_total": 5
+      },
+      "details": {
+        "sts_en": {
+          "spearman": 0.5571,
+          "samples": 15
+        },
+        "retrieval_en": {
+          "mrr": 1.0,
+          "recall_at_3": 0.95,
+          "samples": 5
+        },
+        "sts_zh": {
+          "spearman": 0.6366,
+          "samples": 15
+        },
+        "retrieval_zh": {
+          "mrr": 1.0,
+          "recall_at_3": 0.9,
+          "samples": 5
+        },
+        "cross_lingual": {
+          "avg_similarity": 0.7183,
+          "samples": 15
+        }
+      }
+    }
+  ]
+}
