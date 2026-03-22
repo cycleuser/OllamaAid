@@ -208,3 +208,4 @@ __marimo__/
 .DS_Store
 /pdf
 EmbeddingArticle.md
+docs/ollama_embedding_models_comparison.md

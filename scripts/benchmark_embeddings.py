@@ -52,6 +52,10 @@ EMBEDDING_MODELS: List[str] = [
     "qwen3-embedding:4b",
     "qwen3-embedding:8b",
     "snowflake-arctic-embed:22m",
+    "snowflake-arctic-embed:33m",
+    "snowflake-arctic-embed:110m",
+    "snowflake-arctic-embed:137m",
+    "snowflake-arctic-embed:335m",
     "snowflake-arctic-embed2:568m",
 ]
 

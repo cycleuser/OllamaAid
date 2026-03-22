@@ -1,0 +1,16 @@
+ollama pull translategemma:4b
+ollama pull translategemma:12b
+ollama pull translategemma:27b
+ollama pull gemma3:1b
+ollama pull gemma3:4b
+ollama pull gemma3n:e4b
+ollama pull gemma3n:e2b
+ollama pull huihui_ai/lfm2.5-abliterated:1.2b
+ollama pull huihui_ai/qwen3.5-abliterated:0.8B
+ollama pull huihui_ai/qwen3.5-abliterated:2B
+ollama pull huihui_ai/qwen3.5-abliterated:4B
+ollama pull huihui_ai/qwen3.5-abliterated:9b
+ollama pull huihui_ai/qwen3-abliterated:0.6b
+ollama pull huihui_ai/qwen3-abliterated:4b
+ollama pull huihui_ai/qwen3-abliterated:8b
+ollama pull huihui_ai/glm-4.7-flash-abliterated
