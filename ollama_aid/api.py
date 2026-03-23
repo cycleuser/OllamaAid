@@ -35,6 +35,14 @@ __all__ = [
     "benchmark_embeddings",
     "benchmark_reranker",
     "benchmark_rerankers",
+    "benchmark_translation",
+    "benchmark_translations",
+    "benchmark_tool_call",
+    "benchmark_tool_calls",
+    "benchmark_code_generation",
+    "benchmark_code_generations",
+    "benchmark_chat",
+    "benchmark_chats",
     "detect_model_type",
 ]
 
@@ -291,6 +299,166 @@ def benchmark_rerankers(models: List[str], progress_cb=None) -> ToolResult:
     ToolResult with list of RerankerBenchResult
     """
     from .core.reranker import benchmark_rerankers as _bench
+    return _bench(models, progress_cb=progress_cb)
+
+
+# ---------------------------------------------------------------------------
+# Translation model benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_translation(model: str) -> ToolResult:
+    """Benchmark a single translation model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "qwen2.5:7b")
+    
+    Returns
+    -------
+    ToolResult with TranslationBenchResult
+    """
+    from .core.translator import benchmark_translation as _bench
+    result = _bench(model)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_translations(models: List[str], progress_cb=None) -> ToolResult:
+    """Benchmark multiple translation models.
+    
+    Parameters
+    ----------
+    models: List of model names
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of TranslationBenchResult
+    """
+    from .core.translator import benchmark_translations as _bench
+    return _bench(models, progress_cb=progress_cb)
+
+
+# ---------------------------------------------------------------------------
+# Tool calling benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_tool_call(model: str) -> ToolResult:
+    """Benchmark tool calling capability of a model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "qwen2.5:7b")
+    
+    Returns
+    -------
+    ToolResult with ToolCallBenchResult
+    """
+    from .core.tool_caller import benchmark_tool_call as _bench
+    result = _bench(model)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_tool_calls(models: List[str], progress_cb=None) -> ToolResult:
+    """Benchmark multiple models on tool calling.
+    
+    Parameters
+    ----------
+    models: List of model names
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of ToolCallBenchResult
+    """
+    from .core.tool_caller import benchmark_tool_calls as _bench
+    return _bench(models, progress_cb=progress_cb)
+
+
+# ---------------------------------------------------------------------------
+# Code generation benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_code_generation(model: str) -> ToolResult:
+    """Benchmark code generation capability of a model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "codellama:7b")
+    
+    Returns
+    -------
+    ToolResult with CodeGenBenchResult
+    """
+    from .core.code_eval import benchmark_code_generation as _bench
+    result = _bench(model)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_code_generations(models: List[str], progress_cb=None) -> ToolResult:
+    """Benchmark multiple models on code generation.
+    
+    Parameters
+    ----------
+    models: List of model names
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of CodeGenBenchResult
+    """
+    from .core.code_eval import benchmark_code_generations as _bench
+    return _bench(models, progress_cb=progress_cb)
+
+
+# ---------------------------------------------------------------------------
+# Chat benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark_chat(model: str) -> ToolResult:
+    """Benchmark chat/completion capability of a model.
+    
+    Parameters
+    ----------
+    model: Model name (e.g., "qwen2.5:7b")
+    
+    Returns
+    -------
+    ToolResult with ChatBenchResult
+    """
+    from .core.chat_eval import benchmark_chat as _bench
+    result = _bench(model)
+    return ToolResult(
+        success=result.success,
+        data=result.to_dict(),
+        error=result.error,
+    )
+
+
+def benchmark_chats(models: List[str], progress_cb=None) -> ToolResult:
+    """Benchmark multiple models on chat/completion.
+    
+    Parameters
+    ----------
+    models: List of model names
+    progress_cb: Optional progress callback
+    
+    Returns
+    -------
+    ToolResult with list of ChatBenchResult
+    """
+    from .core.chat_eval import benchmark_chats as _bench
     return _bench(models, progress_cb=progress_cb)
 
 

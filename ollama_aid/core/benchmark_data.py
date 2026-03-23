@@ -478,18 +478,25 @@ MODEL_TYPE_KEYWORDS: Dict[str, List[str]] = {
     "reranker": [
         "rerank", "reranker",
     ],
+    "translator": [
+        "translate", "translation",
+    ],
     "code": [
         "code", "coder", "codellama", "codestral", "deepseek-coder",
+        "qwen2.5-coder",
     ],
     "chat": [
         "chat", "instruct", "qwen", "llama", "mistral", "gemma",
-        "phi", "yi", "glm",
+        "phi", "yi", "glm", "mocha", "-command",
     ],
     "vision": [
-        "vl", "vision", "llava",
+        "vl", "vision", "llava", "qwen2.5-vl", "llama-vision",
     ],
     "thinking": [
-        "thinking", "reason",
+        "thinking", "reason", "r1",
+    ],
+    "tool": [
+        "tool", "function",
     ],
 }
 
@@ -533,3 +540,377 @@ NeurIPS 2016 Workshop on Cognitive Computation.
 https://arxiv.org/abs/1611.09268
 """,
 }
+
+
+@dataclass
+class TranslationSample:
+    """Translation evaluation sample."""
+    source_text: str
+    source_lang: str
+    target_lang: str
+    reference: str
+
+    def to_dict(self) -> dict:
+        return {
+            "source_text": self.source_text,
+            "source_lang": self.source_lang,
+            "target_lang": self.target_lang,
+            "reference": self.reference,
+        }
+
+
+@dataclass
+class ToolCallSample:
+    """Tool calling evaluation sample."""
+    query: str
+    tools: List[dict]
+    expected_function: str
+    expected_params: dict
+
+    def to_dict(self) -> dict:
+        return {
+            "query": self.query,
+            "tools": self.tools,
+            "expected_function": self.expected_function,
+            "expected_params": self.expected_params,
+        }
+
+
+@dataclass
+class CodeGenSample:
+    """Code generation evaluation sample."""
+    prompt: str
+    language: str
+    test_cases: List[str]
+
+    def to_dict(self) -> dict:
+        return {
+            "prompt": self.prompt,
+            "language": self.language,
+            "test_cases": self.test_cases,
+        }
+
+
+@dataclass
+class ChatSample:
+    """Chat/Completion evaluation sample."""
+    system: str
+    user_message: str
+    reference_response: str
+
+    def to_dict(self) -> dict:
+        return {
+            "system": self.system,
+            "user_message": self.user_message,
+            "reference_response": self.reference_response,
+        }
+
+
+@dataclass
+class ClassificationSample:
+    """Classification evaluation sample."""
+    text: str
+    labels: List[str]
+    correct_label: str
+
+    def to_dict(self) -> dict:
+        return {
+            "text": self.text,
+            "labels": self.labels,
+            "correct_label": self.correct_label,
+        }
+
+
+TRANSLATION_BENCHMARK: List[TranslationSample] = [
+    TranslationSample(
+        source_text="The quick brown fox jumps over the lazy dog.",
+        source_lang="en",
+        target_lang="zh",
+        reference="快速的棕色狐狸跳过了懒惰的狗。",
+    ),
+    TranslationSample(
+        source_text="Machine learning is a subset of artificial intelligence.",
+        source_lang="en",
+        target_lang="zh",
+        reference="机器学习是人工智能的一个分支。",
+    ),
+    TranslationSample(
+        source_text="Natural language processing enables computers to understand human language.",
+        source_lang="en",
+        target_lang="zh",
+        reference="自然语言处理使计算机能够理解人类语言。",
+    ),
+    TranslationSample(
+        source_text="The weather is beautiful today.",
+        source_lang="en",
+        target_lang="zh",
+        reference="今天天气很好。",
+    ),
+    TranslationSample(
+        source_text="I am learning to code in Python.",
+        source_lang="en",
+        target_lang="zh",
+        reference="我正在学习Python编程。",
+    ),
+    TranslationSample(
+        source_text="人工智能正在改变世界。",
+        source_lang="zh",
+        target_lang="en",
+        reference="Artificial intelligence is changing the world.",
+    ),
+    TranslationSample(
+        source_text="机器学习是当下的热门技术。",
+        source_lang="zh",
+        target_lang="en",
+        reference="Machine learning is a hot technology nowadays.",
+    ),
+    TranslationSample(
+        source_text="深度学习在图像识别领域表现优异。",
+        source_lang="zh",
+        target_lang="en",
+        reference="Deep learning performs excellently in image recognition.",
+    ),
+    TranslationSample(
+        source_text="自然语言处理有很多实际应用。",
+        source_lang="zh",
+        target_lang="en",
+        reference="Natural language processing has many practical applications.",
+    ),
+    TranslationSample(
+        source_text="数据科学是跨学科领域。",
+        source_lang="zh",
+        target_lang="en",
+        reference="Data science is an interdisciplinary field.",
+    ),
+]
+
+TOOL_CALL_BENCHMARK: List[ToolCallSample] = [
+    ToolCallSample(
+        query="What is the weather in Beijing today?",
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get current weather for a city",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "city": {"type": "string", "description": "City name"},
+                            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                        },
+                        "required": ["city"],
+                    },
+                },
+            }
+        ],
+        expected_function="get_weather",
+        expected_params={"city": "Beijing"},
+    ),
+    ToolCallSample(
+        query="List all models available in Ollama",
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_models",
+                    "description": "List all locally downloaded Ollama models",
+                    "parameters": {"type": "object", "properties": {}, "required": []},
+                },
+            }
+        ],
+        expected_function="list_models",
+        expected_params={},
+    ),
+    ToolCallSample(
+        query="Calculate the area of a circle with radius 5",
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "calculate",
+                    "description": "Perform mathematical calculations",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide", "circle_area"]},
+                            "params": {"type": "object"},
+                        },
+                        "required": ["operation", "params"],
+                    },
+                },
+            }
+        ],
+        expected_function="calculate",
+        expected_params={"operation": "circle_area", "params": {"radius": 5}},
+    ),
+    ToolCallSample(
+        query="Search for information about Python programming",
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "description": "Search the web for information",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string"},
+                            "limit": {"type": "integer"},
+                        },
+                        "required": ["query"],
+                    },
+                },
+            }
+        ],
+        expected_function="search",
+        expected_params={"query": "Python programming"},
+    ),
+    ToolCallSample(
+        query="Translate 'Hello, how are you?' to Chinese",
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "translate",
+                    "description": "Translate text between languages",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "text": {"type": "string"},
+                            "source_lang": {"type": "string"},
+                            "target_lang": {"type": "string"},
+                        },
+                        "required": ["text", "target_lang"],
+                    },
+                },
+            }
+        ],
+        expected_function="translate",
+        expected_params={"text": "Hello, how are you?", "target_lang": "zh"},
+    ),
+]
+
+CODE_GEN_BENCHMARK: List[CodeGenSample] = [
+    CodeGenSample(
+        prompt="Write a Python function to check if a number is prime",
+        language="python",
+        test_cases=["is_prime(2) == True", "is_prime(17) == True", "is_prime(4) == False", "is_prime(1) == False"],
+    ),
+    CodeGenSample(
+        prompt="Write a Python function to find the Fibonacci sequence up to n terms",
+        language="python",
+        test_cases=["fib(10) == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]", "fib(1) == [0]", "fib(0) == []"],
+    ),
+    CodeGenSample(
+        prompt="Write a Python function to reverse a string",
+        language="python",
+        test_cases=['reverse("hello") == "olleh"', 'reverse("") == ""', 'reverse("a") == "a"'],
+    ),
+    CodeGenSample(
+        prompt="Write a Python function to count the occurrences of each character in a string",
+        language="python",
+        test_cases=['count_chars("hello") == {"h":1,"e":1,"l":2,"o":1}', 'count_chars("") == {}'],
+    ),
+    CodeGenSample(
+        prompt="Write a Python function to merge two sorted lists into one sorted list",
+        language="python",
+        test_cases=["merge([1,3,5], [2,4,6]) == [1,2,3,4,5,6]", "merge([], [1]) == [1]", "merge([], []) == []"],
+    ),
+    CodeGenSample(
+        prompt="Write a JavaScript function to check if a string is a palindrome",
+        language="javascript",
+        test_cases=['isPalindrome("racecar") === true', 'isPalindrome("hello") === false', 'isPalindrome("a") === true'],
+    ),
+    CodeGenSample(
+        prompt="Write a JavaScript function to find the maximum element in an array",
+        language="javascript",
+        test_cases=["max([1,5,3]) === 5", "max([10]) === 10", "max([-1,-5,-2]) === -1"],
+    ),
+    CodeGenSample(
+        prompt="Write a Go function to check if a slice contains a specific element",
+        language="go",
+        test_cases=['Contains([]string{"a","b"}, "c") == false', 'Contains([]string{"a","b"}, "a") == true'],
+    ),
+]
+
+CHAT_BENCHMARK: List[ChatSample] = [
+    ChatSample(
+        system="You are a helpful assistant.",
+        user_message="What is the capital of France?",
+        reference_response="The capital of France is Paris.",
+    ),
+    ChatSample(
+        system="You are a helpful coding assistant.",
+        user_message="Explain what a linked list is in simple terms.",
+        reference_response="A linked list is a data structure where elements are connected in a chain. Each element (node) contains data and a reference to the next element.",
+    ),
+    ChatSample(
+        system="You are a helpful assistant.",
+        user_message="What are the main benefits of exercise?",
+        reference_response="Exercise provides multiple benefits including improved cardiovascular health, stronger muscles and bones, better mood, and reduced risk of chronic diseases.",
+    ),
+    ChatSample(
+        system="You are a helpful assistant.",
+        user_message="How does photosynthesis work?",
+        reference_response="Photosynthesis is the process by which plants convert sunlight, water, and carbon dioxide into glucose and oxygen, using chlorophyll in their leaves.",
+    ),
+    ChatSample(
+        system="You are a helpful assistant.",
+        user_message="What is the difference between SQL and NoSQL databases?",
+        reference_response="SQL databases are relational and use structured query language with predefined schemas. NoSQL databases are non-relational and can handle unstructured data with flexible schemas.",
+    ),
+]
+
+CLASSIFICATION_BENCHMARK: List[ClassificationSample] = [
+    ClassificationSample(
+        text="I love this product, it's amazing!",
+        labels=["positive", "negative", "neutral"],
+        correct_label="positive",
+    ),
+    ClassificationSample(
+        text="This is the worst experience ever.",
+        labels=["positive", "negative", "neutral"],
+        correct_label="negative",
+    ),
+    ClassificationSample(
+        text="The meeting is scheduled for tomorrow.",
+        labels=["positive", "negative", "neutral"],
+        correct_label="neutral",
+    ),
+    ClassificationSample(
+        text="Machine learning is a subset of AI.",
+        labels=["technology", "business", "sports", "entertainment"],
+        correct_label="technology",
+    ),
+    ClassificationSample(
+        text="Stock prices dropped significantly today.",
+        labels=["technology", "business", "sports", "entertainment"],
+        correct_label="business",
+    ),
+    ClassificationSample(
+        text="The team won the championship last night.",
+        labels=["technology", "business", "sports", "entertainment"],
+        correct_label="sports",
+    ),
+    ClassificationSample(
+        text="A new streaming series has become very popular.",
+        labels=["technology", "business", "sports", "entertainment"],
+        correct_label="entertainment",
+    ),
+    ClassificationSample(
+        text="This movie was absolutely fantastic!",
+        labels=["positive", "negative", "neutral"],
+        correct_label="positive",
+    ),
+    ClassificationSample(
+        text="I am very disappointed with the service.",
+        labels=["positive", "negative", "neutral"],
+        correct_label="negative",
+    ),
+    ClassificationSample(
+        text="The project deadline is next Friday.",
+        labels=["positive", "negative", "neutral"],
+        correct_label="neutral",
+    ),
+]
